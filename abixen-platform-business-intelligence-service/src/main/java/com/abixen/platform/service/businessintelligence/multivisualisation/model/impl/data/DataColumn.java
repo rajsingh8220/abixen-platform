@@ -14,7 +14,7 @@
 
 package com.abixen.platform.service.businessintelligence.multivisualisation.model.impl.data;
 
-import com.abixen.platform.core.util.ModelKeys;
+import com.abixen.platform.common.util.ModelKeys;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -36,7 +36,10 @@ public class DataColumn {
     @Column(name = "name", length = ModelKeys.NAME_MAX_LENGTH, nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "dataColumn", cascade = CascadeType.ALL)
+    @Column(name = "position", nullable = false)
+    private Integer position;
+
+    @OneToMany(mappedBy = "dataColumn", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DataValue> values = new ArrayList<>();
 
     public Long getId() {
@@ -55,11 +58,38 @@ public class DataColumn {
         this.name = name;
     }
 
+    public Integer getPosition() {
+        return position;
+    }
+
+    public void setPosition(Integer position) {
+        this.position = position;
+    }
+
     public List<DataValue> getValues() {
         return values;
     }
 
     public void setValues(List<DataValue> values) {
-        this.values = values;
+        if (this.values != null) {
+            this.values.clear();
+            this.values.addAll(values);
+        } else {
+            this.values = values;
+        }
+    }
+
+    public void addValues(List<DataValue> values) {
+        if (this.values != null) {
+            this.values.addAll(values);
+        } else {
+            this.values = values;
+        }
+    }
+
+    public void removeValues(List<DataValue> values) {
+        if (this.values != null) {
+            this.values.removeAll(values);
+        }
     }
 }

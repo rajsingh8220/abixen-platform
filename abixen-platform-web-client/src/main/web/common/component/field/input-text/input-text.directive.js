@@ -19,8 +19,8 @@
         .module('platformField')
         .directive('inputText', inputText);
 
-    inputText.$inject = ['$parse', 'validation'];
-    function inputText($parse, validation) {
+    inputText.$inject = ['validation'];
+    function inputText(validation) {
 
         return {
             restrict: 'E',

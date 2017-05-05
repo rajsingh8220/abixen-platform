@@ -19,15 +19,13 @@
         .module('platformCommentModule')
         .directive('comment', commentDirective);
 
-    commentDirective.$inject = ['$log', '$http', '$compile', 'responseHandler', 'platformSecurity', 'amMoment'];
-
-    function commentDirective($log, $http, $compile, platformSecurity) {
+    function commentDirective() {
         var counter = 0,
             depth = null;
 
         return {
             restrict: 'E',
-            templateUrl: '/application/modules/comment/html/comment.template.html',
+            templateUrl: 'application/modules/comment/html/comment.template.html',
             scope: {
                 commentItem: '=',
                 moduleId: '=',
@@ -49,12 +47,12 @@
         }
     }
 
-    function CommentDirectiveController($scope, $log, $compile, Comment, responseHandler, $templateRequest, platformSecurity, amMoment) {
+    CommentDirectiveController.$inject = ['$scope', '$log', '$compile', 'Comment', 'responseHandler', '$templateRequest', 'platformSecurity', 'amMoment', 'CommentVote'];
+
+    function CommentDirectiveController($scope, $log, $compile, Comment, responseHandler, $templateRequest, platformSecurity, amMoment, CommentVote) {
         var comment = this;
         var addCommentForm;
-        var replyClickCounter = 0;
         var action;
-        var platformUser = platformSecurity.getPlatformUser();
         var commentBeforeEdit;
 
         new AbstractDetailsController(comment, Comment, responseHandler, $scope,
@@ -74,15 +72,24 @@
         comment.openAddForm = openAddForm;
         comment.cancelForm = cancelForm;
         comment.deleteComment = deleteComment;
+        comment.vote = vote;
+        comment.unvote = unvote;
+        comment.rejectVote = rejectVote;
         comment.canEdit = canEdit();
         comment.avatarFullPath = getAvatarFullPath();
+        comment.canVote = true;
+        comment.canRejectVote = false;
+        comment.canRejectUnvote = false;
+        prepareVotes();
         changeMomentLocale();
+        checkForVote();
 
         $scope.$watch(platformSecurity.getPlatformUser, onUserChange);
 
         function getAvatarFullPath() {
             var res = '';
-            if (angular.isDefined(comment.commentItem) && comment.commentItem != null) {
+            if (angular.isDefined(comment.commentItem) && comment.commentItem !== null &&
+                angular.isDefined(comment.commentItem.user) && comment.commentItem.user !== null) {
                 res = '/api/application/users/' + comment.commentItem.user.id + '/avatar/' + comment.commentItem.user.avatarFileName;
             }
             return res;
@@ -92,12 +99,28 @@
             var res = angular.isDefined(comment.commentItem)
                 && angular.isDefined(comment.commentItem.user)
                 && comment.commentItem.user != null
-                && (platformUser.id === comment.commentItem.user.id);
+                && (platformSecurity.getPlatformUser().id === comment.commentItem.user.id);
             return res;
         }
 
+        function checkForVote() {
+            if (angular.isDefined(comment.commentItem) && angular.isDefined(comment.commentItem.voteDtos)
+                && comment.commentItem.voteDtos !== null) {
+                angular.forEach(comment.commentItem.voteDtos, function (value, key) {
+                    if (angular.isDefined(comment.commentItem.voteDtos) && value.createdBy.id === platformSecurity.getPlatformUser().id) {
+                        comment.canVote = false;
+                        if (value.commentVoteType === 'POSITIVE') {
+                            comment.canRejectVote = true;
+                        } else {
+                            comment.canRejectUnvote = true;
+                        }
+                    }
+                });
+            }
+        }
+
         function openReplyForm(commentId) {
-            var selector = '#reply-ref-' + commentId;
+            var selector = '#comments-post-div-' + comment.commentItem.moduleId;
             action = 'ADD';
             comment.entity = {};
             comment.entity.parentId = comment.commentItem.id;
@@ -106,7 +129,7 @@
         }
 
         function openEditForm(commentId) {
-            var selector = '#reply-ref-' + commentId;
+            var selector = '#comments-post-div-' + comment.commentItem.moduleId;
             commentBeforeEdit = angular.copy(comment.commentItem);
             comment.entity = comment.commentItem;
             action = 'EDIT';
@@ -114,7 +137,7 @@
         }
 
         function openAddForm() {
-            var selector = '#root-comment-ul-' + comment.moduleId;
+            var selector = '#comments-post-div-' + comment.moduleId;
             action = 'ADD_ROOT';
             comment.entity = {};
             comment.entity.parentId = null;
@@ -124,9 +147,10 @@
 
         function cancelForm() {
             if (addCommentForm) {
-                angular.copy(commentBeforeEdit, comment.commentItem);
+                if (action === 'EDIT'){
+                    angular.copy(commentBeforeEdit, comment.commentItem);
+                }
                 addCommentForm.remove();
-                replyClickCounter = 0;
             }
         }
 
@@ -142,7 +166,6 @@
 
         function onSuccessSaveForm() {
             addCommentForm.remove();
-            replyClickCounter = 0;
 
             if (action === 'ADD') {
                 var curChildren = comment.commentItem.children;
@@ -158,16 +181,20 @@
         }
 
         function appendAndShowCommentForm(selector) {
-            if (replyClickCounter === 0) {
-                var targetElement = angular.element(document.querySelector(selector));
-                $templateRequest("/application/modules/comment/html/add-comment.template.html", false)
-                    .then(function (html) {
-                        addCommentForm = angular.element(html);
-                        targetElement.append(addCommentForm);
-                        $compile(addCommentForm)($scope);
-                        replyClickCounter++;
-                    });
+            var existingForm = angular.element(document.querySelector('#comment-input-form'));
+            if (angular.isDefined(existingForm) && existingForm !== null &&
+                angular.isDefined(existingForm[0]) && existingForm[0].tagName === 'FORM') {
+                $log.info(existingForm[0].tagName);
+                existingForm.remove();
             }
+
+            var targetElement = angular.element(document.querySelector(selector));
+            $templateRequest("/application/modules/comment/html/add-comment.template.html", false)
+                .then(function (html) {
+                    addCommentForm = angular.element(html);
+                    targetElement.append(addCommentForm);
+                    $compile(addCommentForm)($scope);
+                });
         }
 
         function deleteComment(commentItem) {
@@ -179,14 +206,84 @@
             });
         }
 
+        function vote(commentItem) {
+            $log.info('vote comment with id ' + commentItem.id);
+            var newVote = {commentVoteType: 'POSITIVE', commentId: commentItem.id};
+            CommentVote.save(newVote)
+                .$promise.then(function (data) {
+                    if (angular.isUndefined(comment.commentItem.voteDtos) || comment.commentItem.voteDtos === null) {
+                        comment.commentItem.voteDtos = [data];
+                    } else {
+                        comment.commentItem.voteDtos.push(data);
+                    }
+                    comment.commentItem.votePos = comment.commentItem.votePos + 1;
+                    comment.canVote = false;
+                    comment.canRejectVote = true;
+            });
+        }
+
+        function unvote(commentItem) {
+            $log.info('unvote comment with id ' + commentItem.id);
+            var newVote = {commentVoteType: 'NEGATIVE', commentId: commentItem.id};
+            CommentVote.save(newVote)
+                .$promise.then(function (data) {
+                    if (angular.isUndefined(comment.commentItem.voteDtos) || comment.commentItem.voteDtos === null) {
+                        comment.commentItem.voteDtos = [data];
+                    } else {
+                        comment.commentItem.voteDtos.push(data);
+                    }
+                    comment.commentItem.voteNeg = comment.commentItem.voteNeg + 1;
+                    comment.canVote = false;
+                    comment.canRejectUnvote = true;
+            });
+        }
+
+        function rejectVote(commentItem) {
+            $log.info('rejectVote comment with id ' + commentItem.id);
+            angular.forEach(comment.commentItem.voteDtos, function (value, key) {
+                if (value.createdBy.id === platformSecurity.getPlatformUser().id) {
+                    CommentVote.delete(value)
+                        .$promise.then(function (data) {
+
+                        var index = comment.commentItem.voteDtos.indexOf(value);
+                        comment.commentItem.voteDtos.splice(index, 1);
+
+                        if (value.commentVoteType === 'POSITIVE') {
+                            comment.commentItem.votePos = comment.commentItem.votePos - 1;
+                            comment.canRejectVote = false;
+                        } else {
+                            comment.commentItem.voteNeg = comment.commentItem.voteNeg - 1;
+                            comment.canRejectUnvote = false;
+                        }
+                        comment.canVote = true;
+                    });
+                }
+            });
+        }
+
+        function prepareVotes() {
+            if (angular.isDefined(comment.commentItem)) {
+                comment.commentItem.votePos = 0;
+                comment.commentItem.voteNeg = 0;
+                if (angular.isDefined(comment.commentItem.voteDtos)
+                    && comment.commentItem.voteDtos !== null) {
+                    angular.forEach(comment.commentItem.voteDtos, function (value, key) {
+                        if (value.commentVoteType === 'POSITIVE') {
+                            comment.commentItem.votePos = comment.commentItem.votePos + 1;
+                        } else {
+                            comment.commentItem.voteNeg = comment.commentItem.voteNeg + 1;
+                        }
+                    });
+                }
+            }
+        }
+
         function onUserChange() {
-            $log.info('User changed');
             changeMomentLocale();
         }
 
         function changeMomentLocale() {
-            var lang = platformUser.selectedLanguage;
-            switch (lang) {
+            switch (platformSecurity.getPlatformUser().selectedLanguage) {
                 case 'ENGLISH':
                     amMoment.changeLocale('en-gb');
                     break;
@@ -199,7 +296,7 @@
                 case 'UKRAINIAN':
                     amMoment.changeLocale('uk');
                     break;
-                case 'SPAIN':
+                case 'SPANISH':
                     amMoment.changeLocale('sp');
                     break;
                 default:

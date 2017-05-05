@@ -9,7 +9,7 @@ security:
 
 
 spring:
-  profiles: cloud
+  profiles: docker
   redis:
     host: redis
     port: 6379
@@ -21,6 +21,47 @@ zuul:
     connect-timeout-millis: 10000
     socket-timeout-millis: 60000
   routes:
+    # Begin of custom module microservices - add mapping relevant to your microservice
+
+    # Begin of Business Intelligence microservice
+    businessIntelligenceApplication:
+      path: /service/abixen/business-intelligence/application/**
+      url: http://business-intelligence-service:9091/service/abixen/business-intelligence/application
+      sensitive-headers:
+    businessIntelligenceApplicationApi:
+      path: /api/service/abixen/business-intelligence/application/**
+      url: http://business-intelligence-service:9091/api/service/abixen/business-intelligence/application
+      sensitive-headers:
+    businessIntelligenceAdmin:
+      path: /service/abixen/business-intelligence/control-panel/**
+      url: http://business-intelligence-service:9091/service/abixen/business-intelligence/control-panel
+      sensitive-headers:
+    businessIntelligenceAdminApi:
+      path: /api/service/abixen/business-intelligence/control-panel/**
+      url: http://business-intelligence-service:9091/api/service/abixen/business-intelligence/control-panel
+      sensitive-headers:
+    # End of Business Intelligence microservice
+
+    # Begin of Web Content microservice
+    webContentApplication:
+      path: /service/abixen/web-content/application/**
+      url: http://web-content-service:9092/service/abixen/web-content/application
+      sensitive-headers:
+    webContentApplicationApi:
+      path: /api/service/abixen/web-content/application/**
+      url: http://web-content-service:9092/api/service/abixen/web-content/application
+      sensitive-headers:
+    webContentAdmin:
+      path: /service/abixen/web-content/control-panel/**
+      url: http://web-content-service:9092/service/abixen/web-content/control-panel
+      sensitive-headers:
+    webContentAdminApi:
+      path: /api/service/abixen/web-content/control-panel/**
+      url: http://web-content-service:9092/api/service/abixen/web-content/control-panel
+      sensitive-headers:
+    # End of Web Content microservice
+
+    # End of custom module microservices
     resource:
       path: /resource/**
       url: http://core:9000
@@ -29,33 +70,6 @@ zuul:
       path: /api/**
       url: http://core:9000/api
       sensitive-headers:
-
-    # Begin of custom module microservices - add mapping relevant to your microservice
-
-    # Begin of businessintelligence microservice
-    businessintelligenceApplication:
-      path: /service/abixen/business-intelligence/application/**
-      url: http://business-intelligence-service:9091/service/abixen/business-intelligence/application
-      sensitive-headers:
-    businessintelligenceAdmin:
-      path: /service/abixen/business-intelligence/admin/**
-      url: http://business-intelligence-service:9091/service/abixen/business-intelligence/admin
-      sensitive-headers:
-    # End of businessintelligence microservice
-
-    # Begin of web-content microservice
-    webContentApplication:
-      path: /service/abixen/web-content/application/**
-      url: http://web-content-service:9092/service/abixen/web-content/application
-      sensitive-headers:
-    webContentAdmin:
-      path: /service/abixen/web-content/admin/**
-      url: http://web-content-service:9092/service/abixen/web-content/admin
-      sensitive-headers:
-    # End of web-content microservice
-
-    # End of custom module microservices
-
 hystrix:
   command:
     default:
@@ -89,6 +103,47 @@ spring:
 
 zuul:
   routes:
+    # Begin of custom module microservices - add mapping relevant to your microservice
+
+    # Begin of Business Intelligence microservice
+    businessIntelligenceApplication:
+      path: /service/abixen/business-intelligence/application/**
+      url: http://localhost:9091/service/abixen/business-intelligence/application
+      sensitive-headers:
+    businessIntelligenceApplicationApi:
+      path: /api/service/abixen/business-intelligence/application/**
+      url: http://localhost:9091/api/service/abixen/business-intelligence/application
+      sensitive-headers:
+    businessIntelligenceAdmin:
+      path: /service/abixen/business-intelligence/control-panel/**
+      url: http://localhost:9091/service/abixen/business-intelligence/control-panel
+      sensitive-headers:
+    businessIntelligenceAdminApi:
+      path: /api/service/abixen/business-intelligence/control-panel/**
+      url: http://localhost:9091/api/service/abixen/business-intelligence/control-panel
+      sensitive-headers:
+    # End of Business Intelligence microservice
+
+    # Begin of Web Content microservice
+    webContentApplication:
+      path: /service/abixen/web-content/application/**
+      url: http://localhost:9092/service/abixen/web-content/application
+      sensitive-headers:
+    webContentApplicationApi:
+      path: /api/service/abixen/web-content/application/**
+      url: http://localhost:9092/api/service/abixen/web-content/application
+      sensitive-headers:
+    webContentAdmin:
+      path: /service/abixen/web-content/control-panel/**
+      url: http://localhost:9092/service/abixen/web-content/control-panel/
+      sensitive-headers:
+    webContentAdminApi:
+      path: /api/service/abixen/web-content/control-panel/**
+      url: http://localhost:9092/api/service/abixen/web-content/control-panel/
+      sensitive-headers:
+    # End of Web Content microservice
+
+    # End of custom module microservices
     resource:
       path: /resource/**
       url: http://localhost:9000
@@ -97,23 +152,13 @@ zuul:
       path: /api/**
       url: http://localhost:9000/api
       sensitive-headers:
-    businessintelligenceApplication:
-      path: /service/abixen/business-intelligence/application/**
-      url: http://localhost:9091/service/abixen/business-intelligence/application
-      sensitive-headers:
-    businessintelligenceAdmin:
-      path: /service/abixen/business-intelligence/admin/**
-      url: http://localhost:9091/service/abixen/business-intelligence/admin
-      sensitive-headers:
-    webContentApplication:
-      path: /service/abixen/web-content/application/**
-      url: http://localhost:9092/service/abixen/web-content/application
-      sensitive-headers:
-    webContentAdmin:
-      path: /service/abixen/web-content/admin/**
-      url: http://localhost:9092/service/abixen/web-content/admin/
-      sensitive-headers:
-
+hystrix:
+  command:
+    default:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 60000
 eureka:
   instance:
     hostname: localhost

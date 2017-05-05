@@ -6,12 +6,12 @@ module.exports = {
         files: 'src/main/resources/static/**',
         libs: 'src/main/resources/static/lib',
         loginScripts: 'login/application.min.js',
-        adminScripts: 'admin/application.min.js',
+        adminScripts: 'control-panel/application.min.js',
         applicationScripts: 'application/application.min.js',
         commonScripts: 'common/modules.min.js',
         loginStyles: 'login/application.min.css',
         applicationStyles: 'application/application.min.css',
-        adminStyles: 'admin/application.min.css',
+        adminStyles: 'control-panel/application.min.css',
         loginImages: 'src/main/resources/static/login/image',
         commonNavigationImages: 'src/main/resources/static/common/navigation/image',
         libStyles: 'lib/lib.min.css',
@@ -19,7 +19,9 @@ module.exports = {
         roboto: 'src/main/resources/static/fonts/roboto',
         glyphicons: 'src/main/resources/static/fonts/bootstrap',
         ckeditor: 'src/main/resources/static/lib/ckeditor',
-        moment: 'src/main/resources/static/lib/moment'
+        moment: 'src/main/resources/static/lib/moment',
+        applicationTemplateCache: 'src/main/web/application/javascript',
+        controlPanelTemplateCache: 'src/main/web/control-panel/javascript'
     },
     images: {
         login: 'src/main/web/login/image/*',
@@ -66,7 +68,8 @@ module.exports = {
             'bower_components/moment/locale/en-gb.js',
             'bower_components/angular-moment/angular-moment.js',
             'src/main/web/lib/show-errors.min.js',
-            'src/main/web/lib/ng-storage.min.js'
+            'src/main/web/lib/ng-storage.min.js',
+            'src/main/web/lib/code-mirror/xml.js'
         ],
         fontawesome: 'bower_components/fontawesome/fonts/*',
         roboto: 'bower_components/roboto-fontface/fonts/*',
@@ -94,7 +97,7 @@ module.exports = {
             'src/main/web/login/**/*.js'
         ],
         adminFiles: [
-            'src/main/web/admin/**/*.js'
+            'src/main/web/control-panel/**/*.js'
         ],
         applicationFiles: [
             'src/main/web/application/**/*.js'
@@ -103,6 +106,7 @@ module.exports = {
             'src/main/web/common/**/*.js'
         ],
         concatOrder: [
+            'src/main/web/**/*.templatecache.config.js',
             'src/main/web/**/*.module.js',
             'src/main/web/**/*.js'
         ]
@@ -119,7 +123,7 @@ module.exports = {
             'src/main/web/**/*.scss'
         ],
         adminSass: [
-            'src/main/web/admin/scss/application.scss'
+            'src/main/web/control-panel/scss/application.scss'
         ],
 
         applicationWatch: [

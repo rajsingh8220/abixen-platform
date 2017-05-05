@@ -1,0 +1,97 @@
+<form role="form" name="fileDataSourceDetails.entityForm" novalidate>
+    <div class="row form-row">
+        <div class="col-md-6">
+            <div class="form-group" show-errors>
+                <input-text model="fileDataSourceDetails.entity.name"
+                            name="name"
+                            label="{{'service.businessIntelligence.fileDataSource.name.label' | translate}}"
+                            placeholder="{{'service.businessIntelligence.fileDataSource.name.placeholder' | translate}}"
+                            validators="fileDataSourceDetails.validators">
+                </input-text>
+                <input-text model="fileDataSourceDetails.entity.description"
+                            name="description"
+                            label="{{'service.businessIntelligence.fileDataSource.description.label' | translate}}"
+                            placeholder="{{'service.businessIntelligence.fileDataSource.description.placeholder' | translate}}"
+                            validators="fileDataSourceDetails.validators">
+                </input-text>
+                <input-drop-down name="fileData"
+                                 id="dfileDataInput"
+                                 ng-model="fileDataSourceDetails.entity.dataFile"
+                                 ng-model-as-object="true"
+                                 label="{{'service.businessIntelligence.fileDataSource.fileData.label' | translate}}"
+                                 options="fileDataSourceDetails.fileDatas"
+                                 on-change="fileDataSourceDetails.getColumns(fileDataSourceDetails.entity.dataFile)"
+                                 show-empty-value="true"
+                                 value-key="id"
+                                 value-label="name"
+                                 empty-value-label="{{'service.businessIntelligence.fileDataSource.fileData.select' | translate}}"
+                                 key-as-value="false"
+                                 validators="fileDataSourceDetails.validators">
+                </input-drop-down>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <input type="hidden" ng-model="fileDataSourceDetails.entity.columns" name="columns">
+            <div class="columns-section">
+                <div class="columns-section-header row">
+                    <span class="col-xs-6 col-sm-6 col-md-6 col-lg-6 no-padding-left">
+                        <label>
+                            {{'service.businessIntelligence.fileDataSource.column.header.name' | translate}}
+                        </label>
+                    </span>
+                    <span class="col-xs-3 col-sm-3 col-md-3 col-lg-3 no-padding-left">
+                        <label>
+                            {{'service.businessIntelligence.fileDataSource.column.header.type' | translate}}
+                        </label>
+                    </span>
+
+                    <span class="col-xs-3 col-sm-3 col-md-3 col-lg-3 no-padding-left">
+                        <label>
+                            {{'service.businessIntelligence.fileDataSource.column.header.available' | translate}}
+                        </label>
+                    </span>
+                </div>
+                <div class="row">
+                    <ul class="columns-section-content" ng-scrollbar rebuild-on-resize
+                        rebuild-on="content-scroll:rebuild">
+                        <li class="columns-section-content-row" on-ng-repeat-render-finish="content-scroll:rebuild"
+                            ng-repeat="fileColumn in fileDataSourceDetails.fileColumns | orderBy:'position'" >
+                                <span class="col-xs-6 col-sm-6 col-md-6 col-lg-6 no-padding-left">
+                                    {{fileColumn.name}}
+                                </span>
+                            <span class="col-xs-3 col-sm-3 col-md-3 col-lg-3 no-padding-left">
+                                    {{fileColumn.dataValueType}}
+                                </span>
+                            <span class="col-xs-3 col-sm-3 col-md-3 col-lg-3 no-padding-left">
+                                    <input type="checkbox" ng-model="fileColumn.selected"/>
+                                </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row form-row file-preview-table">
+        <div class="col-xs-12">
+            <div
+                    ng-controller="FileDataTableController as fileDataTable">
+                <div ng-if="fileDataTable.renderTable">
+                    <platform-list-grid class="default-platform-list-grid"
+                                        list-grid-config="fileDataTable.listGridConfig"
+                                        load-all-records="true">
+                    </platform-list-grid>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<div class="row bottom-navigation">
+    <div class="col-xs-12">
+        <button class="btn save-button" ng-disabled="fileDataSourceDetails.entityForm.$invalid"
+           ng-click="fileDataSourceDetails.beforeSaveForm()"><i class="fa fa-floppy-o"></i><span>&nbsp;{{'service.businessIntelligence.fileDataSource.save' | translate}}</span>
+        </button>
+        <button class="btn cancel-button"
+           ng-click="fileDataSourceDetails.goToViewMode()"><i class="fa fa-times"></i><span>&nbsp;{{'service.businessIntelligence.fileDataSource.cancel' | translate}}</span>
+        </button>
+    </div>
+</div>

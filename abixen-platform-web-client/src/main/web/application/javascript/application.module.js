@@ -19,6 +19,7 @@
     var platformApplicationModules = [
         'ngResource',
         'pascalprecht.translate',
+        'platformHttp',
         'platformComponent',
         'platformUserModule',
         'platformNavigationModule',
@@ -41,7 +42,9 @@
         'platformFAModalSelection',
         'ngScrollbar',
         'angularMoment',
-        'platformCommentModule'];
+        'platformCommentModule',
+        'webClientTemplatecache'
+    ];
 
     for (var i = 0; i < externalModules.length; i++) {
         if (testIfModuleExists(externalModules[i])) {

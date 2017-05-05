@@ -14,14 +14,13 @@
 
 package com.abixen.platform.service.businessintelligence.multivisualisation.controller;
 
-import com.abixen.platform.core.dto.FormErrorDto;
-import com.abixen.platform.core.dto.FormValidationResultDto;
-import com.abixen.platform.core.util.ValidationUtil;
-import com.abixen.platform.core.util.WebModelJsonSerialize;
+import com.abixen.platform.common.dto.FormErrorDto;
+import com.abixen.platform.common.dto.FormValidationResultDto;
+import com.abixen.platform.common.util.ValidationUtil;
+import com.abixen.platform.common.util.WebModelJsonSerialize;
+import com.abixen.platform.service.businessintelligence.multivisualisation.dto.DatabaseConnectionDto;
 import com.abixen.platform.service.businessintelligence.multivisualisation.form.DatabaseConnectionForm;
-import com.abixen.platform.service.businessintelligence.multivisualisation.model.impl.database.DatabaseConnection;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.web.DataSourceColumnWeb;
-import com.abixen.platform.service.businessintelligence.multivisualisation.model.web.DatabaseConnectionWeb;
 import com.abixen.platform.service.businessintelligence.multivisualisation.service.DatabaseConnectionService;
 import com.fasterxml.jackson.annotation.JsonView;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +28,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,7 +39,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping(value = "/service/abixen/business-intelligence/admin/multi-visualisation/database-connections")
+@RequestMapping(value = "/api/service/abixen/business-intelligence/control-panel/multi-visualisation/database-connections")
 public class DatabaseConnectionController {
 
     private final DatabaseConnectionService databaseConnectionService;
@@ -49,23 +50,13 @@ public class DatabaseConnectionController {
     }
 
     @RequestMapping(value = "", method = RequestMethod.GET)
-    public Page<DatabaseConnection> getDatabaseConnections(@PageableDefault(size = 1, page = 0) Pageable pageable) {
-        log.debug("getDatabaseConnections()");
-
-        Page<DatabaseConnection> databaseConnections = databaseConnectionService.findAllDatabaseConnections(pageable);
-        for (DatabaseConnection fileDatabaseConnection : databaseConnections) {
-            log.debug("fileDatabaseConnection: " + fileDatabaseConnection);
-        }
-
-        return databaseConnections;
+    public Page<DatabaseConnectionDto> getDatabaseConnections(@PageableDefault(size = 1, page = 0) Pageable pageable) {
+        return databaseConnectionService.findAllDatabaseConnectionsAsDto(pageable);
     }
 
-    @JsonView(WebModelJsonSerialize.class)
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    public DatabaseConnectionWeb getDatabaseConnection(@PathVariable Long id) {
-        log.debug("getFileDatabaseConnection() - id: " + id);
-
-        return databaseConnectionService.findDatabaseConnection(id);
+    public DatabaseConnectionDto getDatabaseConnection(@PathVariable Long id) {
+        return databaseConnectionService.findDatabaseConnectionAsDto(id);
     }
 
     @JsonView(WebModelJsonSerialize.class)
@@ -124,5 +115,13 @@ public class DatabaseConnectionController {
         log.debug("getTableColumns()");
         return databaseConnectionService.getTableColumns(id, tableName);
     }
+
+    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    public ResponseEntity<Boolean> deleteFileData(@PathVariable("id") long id) {
+        log.debug("delete() - id: " + id);
+        databaseConnectionService.deleteDatabaseConnection(id);
+        return new ResponseEntity<Boolean>(Boolean.TRUE, HttpStatus.OK);
+    }
+
 
 }

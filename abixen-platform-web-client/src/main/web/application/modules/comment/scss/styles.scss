@@ -40,7 +40,6 @@
   }
 
   .comment-list {
-    border-bottom: 1px dotted #bbb;
     padding: 0;
     list-style: none;
     overflow: hidden;
@@ -103,4 +102,12 @@
   a {
     text-decoration: none !important;
   }
+
+  .add-comment-box {
+    float: inherit;
+  }
+}
+
+.comments-content{
+  height: 421px;
 }

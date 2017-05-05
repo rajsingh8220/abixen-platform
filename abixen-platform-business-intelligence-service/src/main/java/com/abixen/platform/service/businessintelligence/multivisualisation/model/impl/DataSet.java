@@ -14,7 +14,7 @@
 
 package com.abixen.platform.service.businessintelligence.multivisualisation.model.impl;
 
-import com.abixen.platform.core.model.Model;
+import com.abixen.platform.common.model.Model;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.web.DataSetWeb;
 
 import javax.persistence.*;
@@ -36,15 +36,15 @@ public class DataSet extends Model implements DataSetWeb {
     @GeneratedValue(generator = "data_set_seq", strategy = GenerationType.SEQUENCE)
     private Long id;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "domain_x_series_column")
     private DataSetSeriesColumn domainXSeriesColumn;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "domain_z_series_column")
     private DataSetSeriesColumn domainZSeriesColumn;
 
-    @OneToMany(mappedBy = "dataSet", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "dataSet", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<DataSetSeries> dataSetSeries = new HashSet<>();
 
     @Override

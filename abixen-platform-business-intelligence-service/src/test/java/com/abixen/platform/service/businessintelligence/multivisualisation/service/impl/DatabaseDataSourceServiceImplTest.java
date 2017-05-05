@@ -14,6 +14,7 @@
 
  package com.abixen.platform.service.businessintelligence.multivisualisation.service.impl;
 
+import com.abixen.platform.service.businessintelligence.multivisualisation.form.DatabaseConnectionForm;
 import com.abixen.platform.service.businessintelligence.multivisualisation.form.DatabaseDataSourceForm;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.enumtype.DataSourceType;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.enumtype.DataValueType;
@@ -53,7 +54,7 @@ import static org.junit.Assert.*;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
- @Slf4j
+@Slf4j
 @Service
 @Transactional
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -124,7 +125,7 @@ public class DatabaseDataSourceServiceImplTest {
         DatabaseDataSourceForm databaseDataSourceForm = new DatabaseDataSourceForm();
         databaseDataSourceForm.setName("New Form");
         databaseDataSourceForm.setDescription("New Form Desc");
-        databaseDataSourceForm.setDatabaseConnection(DatabaseConnectionAfterSave);
+        databaseDataSourceForm.setDatabaseConnection(new DatabaseConnectionForm(DatabaseConnectionAfterSave));
         databaseDataSourceForm.setTable("NEW_TABLE");
         Set<DataSourceColumnWeb> columns = new HashSet<DataSourceColumnWeb>();
         columns.add(dataSourceColumnAfterSave);
@@ -185,7 +186,7 @@ public class DatabaseDataSourceServiceImplTest {
     public void getDataSources() {
         Page<DatabaseDataSource> page = databaseDataSourceService.getDatabaseDataSources(null, new PageRequest(0, 10));
         assertTrue(page.getTotalElements() > 0);
-        assertEquals(page.getTotalElements(),4);
+        assertEquals(page.getTotalElements(),8);
     }
 
     /**
@@ -195,7 +196,7 @@ public class DatabaseDataSourceServiceImplTest {
     public void findAllDataSources()  {
         Page<DatabaseDataSource> page = databaseDataSourceService.findAllDataSources(new PageRequest(0, 10));
         assertTrue(page.getTotalElements() > 0);
-        assertEquals(page.getTotalElements(),4);
+        assertEquals(page.getTotalElements(),8);
     }
 
     /**
@@ -206,7 +207,7 @@ public class DatabaseDataSourceServiceImplTest {
         DatabaseDataSourceForm databaseDataSourceForm = new DatabaseDataSourceForm();
         databaseDataSourceForm.setName("New Form");
         databaseDataSourceForm.setDescription("New Form Desc");
-        databaseDataSourceForm.setDatabaseConnection(DatabaseConnectionAfterSave);
+        databaseDataSourceForm.setDatabaseConnection(new DatabaseConnectionForm(DatabaseConnectionAfterSave));
         databaseDataSourceForm.setTable("NEW_TABLE");
         Set<DataSourceColumnWeb> columns = new HashSet<DataSourceColumnWeb>();
         columns.add(dataSourceColumnAfterSave);
@@ -224,7 +225,7 @@ public class DatabaseDataSourceServiceImplTest {
         DatabaseDataSourceForm databaseDataSourceForm = new DatabaseDataSourceForm();
         databaseDataSourceForm.setName("New Form");
         databaseDataSourceForm.setDescription("New Form Desc");
-        databaseDataSourceForm.setDatabaseConnection(DatabaseConnectionAfterSave);
+        databaseDataSourceForm.setDatabaseConnection(new DatabaseConnectionForm(DatabaseConnectionAfterSave));
         databaseDataSourceForm.setTable("NEW_TABLE");
         Set<DataSourceColumnWeb> columns = new HashSet<DataSourceColumnWeb>();
         columns.add(dataSourceColumnAfterSave);

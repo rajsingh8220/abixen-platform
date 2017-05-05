@@ -22,13 +22,16 @@ var gulp = require('gulp'),
 gulp.task('clean', cleanTask);
 gulp.task('templates', templatesTask);
 gulp.task('templateCache', templateCacheTask);
+gulp.task('applicationTemplateCache', applicationTemplateCacheTask);
 gulp.task('adminScripts', adminScriptsTask);
 gulp.task('adminStyles', adminStylesTask);
+gulp.task('applicationScripts', applicationScriptsTask);
+gulp.task('applicationStyles', applicationStylesTask);
 gulp.task('build', buildTask);
 gulp.task('adminLibs', adminLibsTask);
 gulp.task('dev', ['build'], devTask);
 gulp.task('default', ['build']);
-gulp.task('angularTemplateCache', ['templateCache'], angularTemplateCacheTask)
+gulp.task('angularTemplateCache', ['templateCache']);
 
 function cleanTask() {
 
@@ -46,18 +49,26 @@ function templatesTask() {
 function templateCacheTask(){
 
     return gulp.src(config.templates.files)
-        .pipe(templateCache('template-cache.js', {module : 'templatecache' }))
+        .pipe(templateCache('web-content-service.templatecache.js', {module : 'webContentServiceTemplatecache' }))
         .pipe(gulp.dest(config.dest.templateCache));
 }
 
-function angularTemplateCacheTask(){
+function applicationTemplateCacheTask(){
 
-    return genericScriptsTask(config.scripts.adminFiles, config.dest.adminScripts);
+    return genericTemplateCacheTask(config.templates.files, config.dest.applicationTemplateCache);
+
 }
+
 function adminScriptsTask() {
 
     return genericScriptsTask(config.scripts.adminFiles, config.dest.adminScripts);
 }
+
+function applicationScriptsTask() {
+
+    return genericScriptsTask(config.scripts.applicationFiles, config.dest.applicationScripts);
+}
+
 
 function genericScriptsTask(sourceScriptsPath, destinationScriptsPath) {
 
@@ -80,6 +91,11 @@ function adminStylesTask() {
     return genericStylesTask(config.styles.adminSass, config.dest.adminStyles);
 }
 
+function applicationStylesTask() {
+
+    return genericStylesTask(config.styles.applicationSass, config.dest.applicationStyles);
+}
+
 function genericStylesTask(sourceSassPath, destinationStylesPath) {
 
     return gulp.src(sourceSassPath)
@@ -92,12 +108,16 @@ function genericStylesTask(sourceSassPath, destinationStylesPath) {
 function buildTask(callback) {
 
     runSequence('clean',
+        'angularTemplateCache',
         'adminLibs',
         [
-            'angularTemplateCache',
             'adminScripts',
             'templates',
             'adminStyles'
+        ],
+        [
+            'applicationScripts',
+            'applicationStyles'
         ],
         callback);
 }
@@ -112,7 +132,7 @@ function devTask() {
 
     gulp.watch(config.scripts.adminFiles, ['adminScripts']);
 
-    gulp.watch(config.templates.files, ['templates']);
+    gulp.watch(config.templates.files, ['templates','angularTemplateCache']);
 
     gulp.watch(config.styles.adminWatch, ['adminStyles']);
 }

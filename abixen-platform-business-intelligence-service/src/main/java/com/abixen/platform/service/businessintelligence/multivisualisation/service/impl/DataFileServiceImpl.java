@@ -14,18 +14,23 @@
 
 package com.abixen.platform.service.businessintelligence.multivisualisation.service.impl;
 
+import com.abixen.platform.common.exception.PlatformRuntimeException;
 import com.abixen.platform.service.businessintelligence.multivisualisation.form.DataFileForm;
+import com.abixen.platform.service.businessintelligence.multivisualisation.message.FileParserMessage;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.enumtype.DataValueType;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.impl.data.DataValue;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.impl.data.DataValueDouble;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.impl.data.DataValueInteger;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.impl.data.DataValueString;
+import com.abixen.platform.service.businessintelligence.multivisualisation.model.impl.datasource.file.FileDataSource;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.impl.file.DataFile;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.impl.file.DataFileColumn;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.web.DataSourceColumnWeb;
 import com.abixen.platform.service.businessintelligence.multivisualisation.repository.DataFileRepository;
+import com.abixen.platform.service.businessintelligence.multivisualisation.repository.FileDataSourceRepository;
 import com.abixen.platform.service.businessintelligence.multivisualisation.service.DataFileService;
 import com.abixen.platform.service.businessintelligence.multivisualisation.service.DomainBuilderService;
+import com.abixen.platform.service.businessintelligence.multivisualisation.service.FileParserService;
 import com.google.common.primitives.Ints;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -33,8 +38,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
 import java.util.*;
 
 
@@ -42,11 +47,21 @@ import java.util.*;
 @Service
 public class DataFileServiceImpl implements DataFileService {
 
-    @Resource
     private DataFileRepository dataFileRepository;
 
-    @Autowired
+    private FileDataSourceRepository fileDataSourceRepository;
+
     private DomainBuilderService domainBuilderService;
+
+    private FileParserFactory fileParserFactory;
+
+    @Autowired
+    public DataFileServiceImpl(FileDataSourceRepository fileDataSourceRepository, FileParserFactory fileParserFactory, DomainBuilderService domainBuilderService, DataFileRepository dataFileRepository) {
+        this.fileDataSourceRepository = fileDataSourceRepository;
+        this.domainBuilderService = domainBuilderService;
+        this.fileParserFactory = fileParserFactory;
+        this.dataFileRepository = dataFileRepository;
+    }
 
     @Override
     public Page<DataFile> getDataFile(String jsonCriteria, Pageable pageable) {
@@ -78,7 +93,7 @@ public class DataFileServiceImpl implements DataFileService {
 
                 @Override
                 public Integer getPosition() {
-                    return null;
+                    return dataFileColumn.getPosition();
                 }
 
                 @Override
@@ -152,6 +167,15 @@ public class DataFileServiceImpl implements DataFileService {
         return dataFileRepository.findOne(id);
     }
 
+    @Override
+    public void delateFileData(Long id) {
+        List<FileDataSource> relatedFileDataSources = fileDataSourceRepository.findByDataFile(dataFileRepository.getOne(id));
+        if (relatedFileDataSources.isEmpty()) {
+            dataFileRepository.delete(id);
+        } else {
+            throw new PlatformRuntimeException("You need to remove all data sources related to this data file");
+        }
+    }
 
     @Override
     public List<Map<String, Integer>> getAllColumns(Long dataFileId) {
@@ -167,6 +191,13 @@ public class DataFileServiceImpl implements DataFileService {
             position++;
         }
         return result;
+    }
+
+    @Override
+    public FileParserMessage<DataFileColumn> uploadAndParseFile(MultipartFile multipartFile, Boolean readFirstColumnAsColumnName) {
+        String fileName = multipartFile.getOriginalFilename();
+        FileParserService fileParserService = fileParserFactory.getParse(fileName.substring(fileName.lastIndexOf(".")));
+        return fileParserService.parseFile(multipartFile, readFirstColumnAsColumnName);
     }
 
     private DataValue getObjForValue(String value) {
@@ -190,4 +221,5 @@ public class DataFileServiceImpl implements DataFileService {
         }
         return dataValue;
     }
+
 }

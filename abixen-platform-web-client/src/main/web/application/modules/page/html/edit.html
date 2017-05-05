@@ -1,0 +1,82 @@
+<div class="modal-header aside-panel-header" id="editPagePanelHeader">
+    <h3 class="modal-title">{{(pageDetails.mode == 'add' ? 'module.page.modalWindow.title.add' : 'module.page.modalWindow.title.edit') | translate}}</h3>
+</div>
+<div class="modal-body" id="editPagePanelBody">
+    <div class="form-container"
+         id="form-container"
+         window-resize
+         header="editPagePanelHeader"
+         body="editPagePanelBody"
+         footer="editPagePanelFooter">
+        <form class="form-horizontal" role="form" name="pageDetails.entityForm" novalidate>
+            <div class="row">
+                <div class="col-md-12">
+
+                    <input-text model="pageDetails.entity.page.title"
+                                name="title"
+                                label="{{'module.page.title.label' | translate}}"
+                                placeholder="{{'module.page.title.placeholder' | translate}}"
+                                validators="pageDetails.validators">
+                    </input-text>
+
+                    <input-text-area model="pageDetails.entity.page.description"
+                                     name="description"
+                                     label="{{'module.page.description.label' | translate}}"
+                                     placeholder="{{'module.page.description.placeholder' | translate}}"
+                                     validators="pageDetails.validators"
+                                     rows="5">
+                    </input-text-area>
+
+                    <div class="form-group">
+                        <label class="control-label">Icon</label>
+                        <div class="row form-group">
+                            <i class="{{(pageDetails.entity.page.icon==undefined)?'fa fa-file-text-o':pageDetails.entity.page.icon}}"></i>
+                            <span class="icon-spacing"></span><a href="" ng-click="pageDetails.changeIcon()">Change</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12 layout-container">
+                    <div>
+                        <div class="row form-group" ng-class="{ 'has-error': pageDetails.entityForm.layout.$invalid}">
+                            <div class="col-xs-4 col-sm-3 col-md-6 col-lg-3 " ng-repeat="layoutObject in pageDetails.layouts">
+                                <label>
+                                    <input style="display:none;" ng-model="pageDetails.entity.page.layout" type="radio"
+                                           dynamic-name="layout" ng-value="layoutObject" class="form-control"
+                                           ng-required="true"/>
+                                    <a class="thumbnail"
+                                       ng-class="{'active': pageDetails.entity.page.layout.id==layoutObject.id}"
+                                       ng-click="pageDetails.changeLayout(layoutObject)">
+                                        <img src="/api/images/layout/{{layoutObject.iconFileName}}/" class="img-responsive"/>
+                                        {{layoutObject.title}}
+                                    </a>
+                                </label>
+                            </div>
+                            <div class="col-xs-8">
+                                <p class="help-block" ng-if="pageDetails.entityForm.layout.$error.required">Layout of page is
+                                    required</p>
+
+                                <p class="help-block" ng-if="pageDetails.entityForm.layout.$error.serverMessage">
+                                    {{pageDetails.entityForm.layout.$error.serverMessage}}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal-footer aside-panel-footer" id="editPagePanelFooter">
+    <div class="row bottom-navigation">
+        <div class="col-sx-12 bottom-navigation-content">
+            <button class="btn save-button"
+               ng-disabled="pageDetails.entityForm.$invalid"
+               ng-click="pageDetails.saveForm()"><i class="fa fa-floppy-o"></i><span>&nbsp;Save</span>
+            </button>
+            <button class="btn cancel-button"
+               ng-click="pageDetails.cancel()"><i class="fa fa-times"></i><span>&nbsp;Cancel</span>
+            </button>
+        </div>
+    </div>
+</div>

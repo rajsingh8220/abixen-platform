@@ -143,21 +143,25 @@
   }
 
   .wizard-chart-configuration-content, .wizard-table-configuration-content {
+    height: 450px;
+
     label{
       display: block;
+    }
+
+    input-date {
+      .form-group {
+        .input-group {
+          width: 70%;
+          table-layout: fixed;
+        }
+      }
     }
 
     .axis-x-filter {
       div {
         padding-left: 0;
         padding-bottom: 5px;
-      }
-
-      div:first-child {
-        margin-bottom: 20px;
-      }
-      div:last-child {
-        padding-left: 20px;
       }
     }
 

@@ -47,7 +47,7 @@
             .state('application', {
                 abstract: true,
                 controller: 'PlatformInitController',
-                templateUrl: '/application/html/index.html',
+                templateUrl: 'application/html/index.html',
                 resolve: {
                     platformSecurityResolver: platformSecurityResolver
                 }
@@ -60,7 +60,6 @@
         platformSecurityResolver.$inject = ['platformSecurity'];
 
         function platformSecurityResolver(platformSecurity) {
-            console.log("platform security resolver");
             platformSecurity.reloadPlatformUser();
         }
     }

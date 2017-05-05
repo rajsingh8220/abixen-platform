@@ -22,30 +22,30 @@ import com.abixen.platform.service.businessintelligence.multivisualisation.servi
 import com.abixen.platform.service.businessintelligence.multivisualisation.service.ChartConfigurationService;
 import com.abixen.platform.service.businessintelligence.multivisualisation.service.DataSourceService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.NotImplementedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import javax.annotation.Resource;
-
 
 @Slf4j
 @Transactional
 @Service
 public class ChartConfigurationServiceImpl implements ChartConfigurationService {
 
-    @Resource
-    private ChartConfigurationRepository chartConfigurationRepository;
+    private final ChartConfigurationRepository chartConfigurationRepository;
+    private final ChartConfigurationDomainBuilderService chartConfigurationDomainBuilderService;
+    private final DataSourceService dataSourceService;
+    private final DataSourceColumnRepository dataSourceColumnRepository;
 
     @Autowired
-    private ChartConfigurationDomainBuilderService chartConfigurationDomainBuilderService;
-
-    @Autowired
-    private DataSourceService dataSourceService;
-
-    @Autowired
-    private DataSourceColumnRepository dataSourceColumnRepository;
+    public ChartConfigurationServiceImpl(ChartConfigurationRepository chartConfigurationRepository,
+                                         ChartConfigurationDomainBuilderService chartConfigurationDomainBuilderService,
+                                         DataSourceService dataSourceService,
+                                         DataSourceColumnRepository dataSourceColumnRepository) {
+        this.chartConfigurationRepository = chartConfigurationRepository;
+        this.chartConfigurationDomainBuilderService = chartConfigurationDomainBuilderService;
+        this.dataSourceService = dataSourceService;
+        this.dataSourceColumnRepository = dataSourceColumnRepository;
+    }
 
     @Override
     public ChartConfiguration buildChartConfiguration(ChartConfigurationForm chartConfigurationForm) {
@@ -104,6 +104,10 @@ public class ChartConfigurationServiceImpl implements ChartConfigurationService 
 
     @Override
     public void removeChartConfiguration(Long moduleId) {
-        throw new NotImplementedException("Method removeChartConfiguration(Long moduleId) is not implemented yet!");
+        log.debug("removeChartConfiguration - moduleId", moduleId);
+        ChartConfiguration chartConfiguration = chartConfigurationRepository.findByModuleId(moduleId);
+        if (chartConfiguration != null) {
+            chartConfigurationRepository.delete(chartConfiguration);
+        }
     }
 }

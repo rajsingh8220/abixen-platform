@@ -14,21 +14,25 @@
 
 package com.abixen.platform.service.businessintelligence.multivisualisation.controller;
 
-import com.abixen.platform.core.dto.FormErrorDto;
-import com.abixen.platform.core.dto.FormValidationResultDto;
-import com.abixen.platform.core.util.ValidationUtil;
-import com.abixen.platform.core.util.WebModelJsonSerialize;
+import com.abixen.platform.common.dto.FormErrorDto;
+import com.abixen.platform.common.dto.FormValidationResultDto;
+import com.abixen.platform.common.exception.PlatformRuntimeException;
+import com.abixen.platform.common.util.ValidationUtil;
+import com.abixen.platform.common.util.WebModelJsonSerialize;
+import com.abixen.platform.service.businessintelligence.multivisualisation.dto.DataValueDto;
 import com.abixen.platform.service.businessintelligence.multivisualisation.form.DatabaseDataSourceForm;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.impl.datasource.database.DatabaseDataSource;
-import com.abixen.platform.service.businessintelligence.multivisualisation.model.web.DataValueWeb;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.web.DatabaseDataSourceWeb;
 import com.abixen.platform.service.businessintelligence.multivisualisation.service.DatabaseDataSourceService;
 import com.fasterxml.jackson.annotation.JsonView;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,7 +43,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping(value = "/service/abixen/business-intelligence/admin/multi-visualisation/database-data-sources")
+@RequestMapping(value = "/api/service/abixen/business-intelligence/control-panel/multi-visualisation/database-data-sources")
 public class DatabaseDataSourceController {
 
     private final DatabaseDataSourceService databaseDataSourceService;
@@ -90,20 +94,37 @@ public class DatabaseDataSourceController {
             List<FormErrorDto> formErrors = ValidationUtil.extractFormErrors(bindingResult);
             return new FormValidationResultDto(databaseDataSourceForm, formErrors);
         }
-
-        DatabaseDataSourceForm databaseDataSourceFormResult = databaseDataSourceService.updateDataSource(databaseDataSourceForm);
+        DatabaseDataSourceForm databaseDataSourceFormResult = null;
+        try {
+            databaseDataSourceFormResult = databaseDataSourceService.updateDataSource(databaseDataSourceForm);
+        } catch (Throwable e) {
+            log.error(e.getMessage());
+            if (e.getCause() instanceof ConstraintViolationException) {
+                throw new PlatformRuntimeException("Data source can not be updated. If you want to change available columns then you need to detach they from charts firstly.");
+            } else {
+                throw e;
+            }
+        }
 
         return new FormValidationResultDto(databaseDataSourceFormResult);
     }
 
     @JsonView(WebModelJsonSerialize.class)
     @RequestMapping(value = "/preview", method = RequestMethod.POST)
-    public  List<Map<String, DataValueWeb>> getPreviewData(@RequestBody @Valid DatabaseDataSourceForm databaseDataSourceForm) {
+    public  List<Map<String, DataValueDto>> getPreviewData(@RequestBody @Valid DatabaseDataSourceForm databaseDataSourceForm) {
         log.debug("createDataSource() - databaseDataSourceForm: " + databaseDataSourceForm);
 
-        List<Map<String, DataValueWeb>> databaseDataSourcePreviewData = databaseDataSourceService.getPreviewData(databaseDataSourceForm);
+        List<Map<String, DataValueDto>> databaseDataSourcePreviewData = databaseDataSourceService.getPreviewData(databaseDataSourceForm);
 
         return databaseDataSourcePreviewData;
     }
+
+    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    public ResponseEntity<Boolean> deleteDatabaseDataSource(@PathVariable("id") long id) {
+        log.debug("delete() - id: " + id);
+        databaseDataSourceService.delateDataBaseDataSource(id);
+        return new ResponseEntity<Boolean>(Boolean.TRUE, HttpStatus.OK);
+    }
+
 
 }

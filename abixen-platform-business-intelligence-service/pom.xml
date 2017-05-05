@@ -25,7 +25,7 @@
         <log4j2.version>2.5</log4j2.version>
         <start-class>com.abixen.platform.service.businessintelligence.PlatformBusinessIntelligenceServiceApplication</start-class>
         <docker.plugin.version>0.4.13</docker.plugin.version>
-        <docker.image.prefix>abixen-platform</docker.image.prefix>
+        <docker.image.prefix>abixen</docker.image.prefix>
     </properties>
 
     <dependencyManagement>
@@ -162,6 +162,11 @@
             <artifactId>ojdbc6</artifactId>
             <version>12.1.0.1-atlassian-hosted</version>
         </dependency>
+        <dependency>
+            <groupId>com.microsoft</groupId>
+            <artifactId>sqljdbc4</artifactId>
+            <version>3.0</version>
+        </dependency>
 
         <!-- JSON utils -->
         <dependency>
@@ -207,6 +212,18 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
             <version>2.0.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
+            <version>3.9</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>3.15</version>
         </dependency>
 
     </dependencies>
@@ -283,6 +300,11 @@
                 <configuration>
                     <imageName>${docker.image.prefix}/${project.artifactId}</imageName>
                     <dockerDirectory>${project.basedir}/src/main/docker</dockerDirectory>
+                    <imageTags>
+                        <imageTag>${project.version}</imageTag>
+                        <imageTag>latest</imageTag>
+                    </imageTags>
+                    <useConfigFile>false</useConfigFile>
                     <resources>
                         <resource>
                             <targetPath>/</targetPath>
@@ -332,6 +354,11 @@
         <repository>
             <id>oracle-jdbc</id>
             <url>https://maven.atlassian.com/3rdparty/</url>
+        </repository>
+        <repository>
+            <id>Clojars</id>
+            <name>Clojars Repository</name>
+            <url>http://clojars.org/repo/</url>
         </repository>
     </repositories>
 

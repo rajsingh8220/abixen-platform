@@ -14,12 +14,12 @@
 
 package com.abixen.platform.service.businessintelligence.multivisualisation.service.impl;
 
+import com.abixen.platform.service.businessintelligence.multivisualisation.dto.DataValueDto;
 import com.abixen.platform.service.businessintelligence.multivisualisation.form.DatabaseDataSourceForm;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.impl.database.DatabaseConnection;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.impl.datasource.DataSourceColumn;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.impl.datasource.database.DatabaseDataSource;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.web.DataSourceColumnWeb;
-import com.abixen.platform.service.businessintelligence.multivisualisation.model.web.DataValueWeb;
 import com.abixen.platform.service.businessintelligence.multivisualisation.repository.DatabaseDataSourceRepository;
 import com.abixen.platform.service.businessintelligence.multivisualisation.service.*;
 import lombok.extern.slf4j.Slf4j;
@@ -91,9 +91,10 @@ public class DatabaseDataSourceServiceImpl extends DataSourceServiceImpl impleme
     @Override
     public DatabaseDataSource buildDataSource(DatabaseDataSourceForm databaseDataSourceForm) {
         log.debug("buildDataSource() - databaseDataSourceForm: " + databaseDataSourceForm);
+        DatabaseConnection databaseConnection = databaseConnectionService.findDatabaseConnection(databaseDataSourceForm.getDatabaseConnection().getId());
         return domainBuilderService.newDatabaseDataSourceBuilderInstance()
                 .base(databaseDataSourceForm.getName(), databaseDataSourceForm.getDescription())
-                .connection(databaseConnectionService.findDatabaseConnection(databaseDataSourceForm.getDatabaseConnection().getId()))
+                .connection(databaseConnection)
                 .data(databaseDataSourceForm.getTable(), databaseDataSourceForm.getFilter())
                 .columns(databaseDataSourceForm.getColumns())
                 .build();
@@ -158,6 +159,7 @@ public class DatabaseDataSourceServiceImpl extends DataSourceServiceImpl impleme
             dataSourceColumn.setName(dataSourceColumnWeb.getName());
             dataSourceColumn.setPosition(dataSourceColumnWeb.getPosition());
             dataSourceColumn.setDataSource(databaseDataSource);
+            dataSourceColumn.setDataValueType(dataSourceColumnWeb.getDataValueType());
             dataSourceColumns.add(dataSourceColumn);
         }
     }
@@ -175,11 +177,16 @@ public class DatabaseDataSourceServiceImpl extends DataSourceServiceImpl impleme
     }
 
     @Override
-    public List<Map<String, DataValueWeb>> getPreviewData(DatabaseDataSourceForm databaseDataSourceForm) {
+    public void delateDataBaseDataSource(Long id) {
+        databaseDataSourceRepository.delete(id);
+    }
+
+    @Override
+    public List<Map<String, DataValueDto>> getPreviewData(DatabaseDataSourceForm databaseDataSourceForm) {
         DatabaseConnection databaseConnection = databaseConnectionService.findDatabaseConnection(databaseDataSourceForm.getDatabaseConnection().getId());
         DatabaseService databaseService = databaseFactory.getDatabaseService(databaseDataSourceForm.getDatabaseConnection().getDatabaseType());
         Connection connection = databaseService.getConnection(databaseConnection);
-        List<Map<String, DataValueWeb>> dataSourcePreviewData = databaseService.getDataSourcePreview(connection, buildDataSource(databaseDataSourceForm));
+        List<Map<String, DataValueDto>> dataSourcePreviewData = databaseService.getDataSourcePreview(connection, buildDataSource(databaseDataSourceForm));
         return dataSourcePreviewData;
     }
 }

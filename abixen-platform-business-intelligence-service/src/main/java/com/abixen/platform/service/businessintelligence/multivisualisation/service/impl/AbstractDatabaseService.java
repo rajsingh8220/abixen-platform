@@ -14,6 +14,8 @@
 
 package com.abixen.platform.service.businessintelligence.multivisualisation.service.impl;
 
+import com.abixen.platform.common.exception.PlatformRuntimeException;
+import com.abixen.platform.service.businessintelligence.multivisualisation.dto.DataValueDto;
 import com.abixen.platform.service.businessintelligence.multivisualisation.exception.DataParsingException;
 import com.abixen.platform.service.businessintelligence.multivisualisation.exception.DataSourceValueException;
 import com.abixen.platform.service.businessintelligence.multivisualisation.form.ChartConfigurationForm;
@@ -32,8 +34,31 @@ import java.util.stream.IntStream;
 
 public abstract class AbstractDatabaseService {
 
-    private final int chartLimit = 10;
+    private final int chartLimit = 8;
     private final int datasourceLimit = 20;
+
+    public static final List<String> APPLICATION_TABLE_LIST = new ArrayList<>(Arrays.asList(
+            "chart_configuration",
+            "data_column",
+            "data_file",
+            "data_set",
+            "data_set_chart",
+            "data_set_series",
+            "data_set_series_column",
+            "data_source",
+            "data_source_column",
+            "data_value",
+            "data_value_date",
+            "data_value_double",
+            "data_value_integer",
+            "data_value_string",
+            "database_connection",
+            "database_data_source",
+            "databasechangelog",
+            "databasechangeloglock",
+            "file_data_source",
+            "file_data_source_row"));
+
 
     @Autowired
     private JsonFilterService jsonFilterService;
@@ -51,12 +76,12 @@ public abstract class AbstractDatabaseService {
                 try {
                     columns.add(prepareDataSourceColumns(rsmd, i));
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    throw new PlatformRuntimeException(e);
                 }
             });
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new PlatformRuntimeException(e);
         }
 
         return columns;
@@ -108,13 +133,13 @@ public abstract class AbstractDatabaseService {
             while (rs.next()) {
                 if ("TABLE".equals(rs.getString(objectTypeIndex)) || "VIEW".equals(rs.getString(objectTypeIndex))) {
                     if (isAllowedTable(rs.getString(objectNameIndex))) {
-                        tables.add(rs.getString(objectNameIndex));
+                        tables.add(rs.getString(objectNameIndex).toUpperCase());
                     }
                 }
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new PlatformRuntimeException(e);
         }
         return tables;
     }
@@ -128,7 +153,15 @@ public abstract class AbstractDatabaseService {
         return true;
     }
 
-    public List<Map<String, DataValueWeb>> getChartData(Connection connection, DatabaseDataSource databaseDataSource, ChartConfigurationForm chartConfigurationForm) {
+    public List<Map<String, DataValueDto>> getChartData(Connection connection,
+                                                        DatabaseDataSource databaseDataSource,
+                                                        ChartConfigurationForm chartConfigurationForm,
+                                                        String seriesName) {
+        return seriesName != null ? getChartDataPreview(connection, databaseDataSource, chartConfigurationForm, seriesName)
+                : getChartData(connection, databaseDataSource, chartConfigurationForm);
+    }
+
+    private List<Map<String, DataValueDto>> getChartData(Connection connection, DatabaseDataSource databaseDataSource, ChartConfigurationForm chartConfigurationForm) {
         Set<String> chartColumnsSet = getDomainColumn(chartConfigurationForm);
 
         chartConfigurationForm.getDataSetChart().getDataSetSeries().forEach(dataSetSeries -> {
@@ -140,7 +173,7 @@ public abstract class AbstractDatabaseService {
         if (chartColumnsSet.isEmpty()) {
             return new ArrayList<>();
         }
-        return getData(connection, databaseDataSource, chartColumnsSet, chartConfigurationForm);
+        return getData(connection, databaseDataSource, chartColumnsSet, chartConfigurationForm, null);
     }
 
     private Set<String> getDomainColumn(ChartConfigurationForm chartConfigurationForm) {
@@ -155,7 +188,7 @@ public abstract class AbstractDatabaseService {
         return chartColumnsSet;
     }
 
-    public List<Map<String, DataValueWeb>> getChartDataPreview(Connection connection, DatabaseDataSource databaseDataSource, ChartConfigurationForm chartConfigurationForm, String seriesName) {
+    private List<Map<String, DataValueDto>> getChartDataPreview(Connection connection, DatabaseDataSource databaseDataSource, ChartConfigurationForm chartConfigurationForm, String seriesName) {
         Set<String> chartColumnsSet = getDomainColumn(chartConfigurationForm);
 
         chartConfigurationForm.getDataSetChart().getDataSetSeries().forEach(dataSetSeries -> {
@@ -168,11 +201,11 @@ public abstract class AbstractDatabaseService {
             return new ArrayList<>();
         }
         //FixMe
-        List<Map<String, DataValueWeb>> data = getData(connection, databaseDataSource, chartColumnsSet, chartConfigurationForm);
-        return data.subList(0, data.size() < chartLimit ? data.size() : chartLimit);
+        List<Map<String, DataValueDto>> data = getData(connection, databaseDataSource, chartColumnsSet, chartConfigurationForm, chartLimit);
+        return data;
     }
 
-    public List<Map<String, DataValueWeb>> getDataSourcePreview(Connection connection, DatabaseDataSource databaseDataSource) {
+    public List<Map<String, DataValueDto>> getDataSourcePreview(Connection connection, DatabaseDataSource databaseDataSource) {
         Set<String> dataSourceColumnsSet = new HashSet<>();
 
         databaseDataSource.getColumns().forEach(column -> {
@@ -183,57 +216,62 @@ public abstract class AbstractDatabaseService {
             return new ArrayList<>();
         }
         //FixMe
-        List<Map<String, DataValueWeb>> data = getData(connection, databaseDataSource, dataSourceColumnsSet, null);
-        return data.subList(0, data.size() < datasourceLimit ? data.size() : datasourceLimit);
+        List<Map<String, DataValueDto>> data = getData(connection, databaseDataSource, dataSourceColumnsSet, null, datasourceLimit);
+        return data;
     }
 
-    private List<Map<String, DataValueWeb>> getData(Connection connection, DatabaseDataSource databaseDataSource, Set<String> chartColumnsSet, ChartConfigurationForm chartConfigurationForm) {
+    private List<Map<String, DataValueDto>> getData(Connection connection, DatabaseDataSource databaseDataSource, Set<String> chartColumnsSet, ChartConfigurationForm chartConfigurationForm, Integer limit) {
         ResultSet rs;
-        List<Map<String, DataValueWeb>> data = new ArrayList<>();
+        List<Map<String, DataValueDto>> data = new ArrayList<>();
         try {
             Statement statement = connection.createStatement();
             ResultSetMetaData resultSetMetaData = getDatabaseMetaData(connection, databaseDataSource.getTable());
             if (chartConfigurationForm != null) {
-                rs = statement.executeQuery(buildQueryForChartData(databaseDataSource, chartColumnsSet, resultSetMetaData, chartConfigurationForm));
+                rs = statement.executeQuery(buildQueryForChartData(databaseDataSource, chartColumnsSet, resultSetMetaData, chartConfigurationForm, limit));
             } else {
-                rs = statement.executeQuery(buildQueryForDataSourceData(databaseDataSource, chartColumnsSet, resultSetMetaData).toString());
+                rs = statement.executeQuery(buildQueryForDataSourceData(databaseDataSource, chartColumnsSet, resultSetMetaData, limit).toString());
             }
             while (rs.next()) {
                 final ResultSet row = rs;
-                Map<String, DataValueWeb> rowMap = new HashMap<>();
+                Map<String, DataValueDto> rowMap = new HashMap<>();
                 chartColumnsSet.forEach(chartColumnsSetElement -> {
                     rowMap.put(chartColumnsSetElement, getDataFromColumn(row, chartColumnsSetElement));
                 });
                 data.add(rowMap);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
             throw new DataParsingException("Error when parsing data from db. " + e.getMessage());
         }
         return data;
     }
 
-    private String buildQueryForChartData(DatabaseDataSource databaseDataSource, Set<String> chartColumnsSet, ResultSetMetaData resultSetMetaData, ChartConfigurationForm chartConfigurationForm) throws SQLException {
+    private String buildQueryForChartData(DatabaseDataSource databaseDataSource, Set<String> chartColumnsSet, ResultSetMetaData resultSetMetaData, ChartConfigurationForm chartConfigurationForm, Integer limit) throws SQLException {
         StringBuilder outerSelect = new StringBuilder("SELECT ");
         outerSelect.append("subQueryResult." + chartColumnsSet.toString().substring(1, chartColumnsSet.toString().length() - 1));
         outerSelect.append(" FROM (");
-        outerSelect.append(buildQueryForDataSourceData(databaseDataSource, chartColumnsSet, resultSetMetaData));
+        outerSelect.append(buildQueryForDataSourceData(databaseDataSource, chartColumnsSet, resultSetMetaData, limit));
         outerSelect.append(") subQueryResult WHERE ");
         outerSelect.append(jsonFilterService.convertJsonToJpql(chartConfigurationForm.getFilter(), resultSetMetaData));
         return outerSelect.toString();
     }
 
-    private StringBuilder buildQueryForDataSourceData(DatabaseDataSource databaseDataSource, Set<String> chartColumnsSet, ResultSetMetaData resultSetMetaData) throws SQLException {
+    private StringBuilder buildQueryForDataSourceData(DatabaseDataSource databaseDataSource, Set<String> chartColumnsSet, ResultSetMetaData resultSetMetaData, Integer limit) throws SQLException {
         StringBuilder stringBuilder = new StringBuilder("SELECT ");
         stringBuilder.append(chartColumnsSet.toString().substring(1, chartColumnsSet.toString().length() - 1));
         stringBuilder.append(" FROM ");
         stringBuilder.append(databaseDataSource.getTable());
         stringBuilder.append(" WHERE ");
         stringBuilder.append(jsonFilterService.convertJsonToJpql(databaseDataSource.getFilter(), resultSetMetaData));
+        return limit != null ? setLimitConditionForCharDataQuery(stringBuilder, limit) : stringBuilder;
+    }
+
+    protected StringBuilder setLimitConditionForCharDataQuery(StringBuilder stringBuilder, Integer limit) {
+        stringBuilder.append(" LIMIT ");
+        stringBuilder.append(limit + " ");
         return stringBuilder;
     }
 
-    private DataValueWeb getDataFromColumn(ResultSet row, String columnName) {
+    private DataValueDto getDataFromColumn(ResultSet row, String columnName) {
         try {
             ResultSetMetaData resultSetMetaData = row.getMetaData();
             String columnTypeName = getValidColumnTypeName(row.findColumn(columnName), resultSetMetaData);
@@ -245,19 +283,33 @@ public abstract class AbstractDatabaseService {
 
     private String getValidColumnTypeName(Integer columnIndex, ResultSetMetaData resultSetMetaData) throws SQLException {
         String columnTypeName = resultSetMetaData.getColumnTypeName(columnIndex).toUpperCase();
-        if ("BIGINT".equals(columnTypeName)) {
-            columnTypeName = "INTEGER";
-        }
-        if ("VARCHAR".equals(columnTypeName)) {
-            columnTypeName = "STRING";
-        }
-        if ("FLOAT8".equals(columnTypeName)) {
-            columnTypeName = "DOUBLE";
+        Map<String, String> databaseTypeOnApplicationType = buildDatabaseTypeOnApplicationType();
+        String mappedColumnType = databaseTypeOnApplicationType.get(columnTypeName);
+        if (mappedColumnType != null) {
+            return mappedColumnType;
         }
         return columnTypeName;
     }
 
-    private DataValueWeb getValueAsDataSourceValue(ResultSet row, String columnName, DataValueType columnTypeName) throws SQLException {
+    private Map<String, String> buildDatabaseTypeOnApplicationType() {
+        return getSpecyficTypeMapping(getStandardTypeMapping());
+    }
+
+    protected Map<String, String> getSpecyficTypeMapping(Map<String, String> databaseTypeOnApplicationType) {
+        return databaseTypeOnApplicationType;
+    }
+
+    private Map<String, String> getStandardTypeMapping() {
+        Map<String, String> databaseTypeOnApplicationType = new HashMap<>();
+        databaseTypeOnApplicationType.put("BIGINT", DataValueType.INTEGER.getName());
+        databaseTypeOnApplicationType.put("VARCHAR", DataValueType.STRING.getName());
+        databaseTypeOnApplicationType.put("FLOAT8", DataValueType.DOUBLE.getName());
+        databaseTypeOnApplicationType.put("DECIMAL", DataValueType.DOUBLE.getName());
+        return databaseTypeOnApplicationType;
+    }
+
+
+    private DataValueDto getValueAsDataSourceValue(ResultSet row, String columnName, DataValueType columnTypeName) throws SQLException {
         switch (columnTypeName) {
             case DOUBLE:
                 return getValueAsDataSourceValueDoubleWeb(row, columnName);
@@ -272,63 +324,27 @@ public abstract class AbstractDatabaseService {
         }
     }
 
-    private DataValueWeb getValueAsDataSourceValueDateWeb(ResultSet row, String columnName) throws SQLException {
+    private DataValueDto getValueAsDataSourceValueDateWeb(ResultSet row, String columnName) throws SQLException {
         Date value = row.getDate(row.findColumn(columnName));
-        return new DataValueDateWeb() {
-            @Override
-            public Date getValue() {
-                return value;
-            }
-
-            @Override
-            public void setValue(Date value) {
-                throw new NotImplementedException("Setter not implemented yet");
-            }
-        };
+        return new DataValueDto<Date>()
+                        .setValue(value);
     }
 
-    private DataValueWeb getValueAsDataSourceValueDoubleWeb(ResultSet row, String columnName) throws SQLException {
+    private DataValueDto getValueAsDataSourceValueDoubleWeb(ResultSet row, String columnName) throws SQLException {
         Double value = row.getDouble(row.findColumn(columnName));
-        return new DataValueDoubleWeb() {
-            @Override
-            public Double getValue() {
-                return value;
-            }
-
-            @Override
-            public void setValue(Double value) {
-                throw new NotImplementedException("Setter not implemented yet");
-            }
-        };
+        return new DataValueDto<Double>()
+                .setValue(value);
     }
 
-    private DataValueWeb getValueAsDataSourceValueIntegerWeb(ResultSet row, String columnName) throws SQLException {
+    private DataValueDto getValueAsDataSourceValueIntegerWeb(ResultSet row, String columnName) throws SQLException {
         Integer value = row.getInt(row.findColumn(columnName));
-        return new DataValueIntegerWeb() {
-            @Override
-            public Integer getValue() {
-                return value;
-            }
-
-            @Override
-            public void setValue(Integer value) {
-                throw new NotImplementedException("Setter not implemented yet");
-            }
-        };
+        return new DataValueDto<Integer>()
+                .setValue(value);
     }
 
-    private DataValueWeb getValueAsDataSourceValueStringWeb(ResultSet row, String columnName) throws SQLException {
+    private DataValueDto getValueAsDataSourceValueStringWeb(ResultSet row, String columnName) throws SQLException {
         String value = row.getString(row.findColumn(columnName));
-        return new DataValueStringWeb() {
-            @Override
-            public String getValue() {
-                return value;
-            }
-
-            @Override
-            public void setValue(String value) {
-                throw new NotImplementedException("Setter not implemented yet");
-            }
-        };
+        return new DataValueDto<String>()
+                .setValue(value);
     }
 }

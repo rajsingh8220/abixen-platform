@@ -24,7 +24,7 @@
         <spring-session.version>1.2.2.RELEASE</spring-session.version>
         <start-class>com.abixen.platform.core.PlatformApplication</start-class>
         <docker.plugin.version>0.4.13</docker.plugin.version>
-        <docker.image.prefix>abixen-platform</docker.image.prefix>
+        <docker.image.prefix>abixen</docker.image.prefix>
         <log4j2.version>2.5</log4j2.version>
     </properties>
 
@@ -133,18 +133,11 @@
             <version>3.2.7.RELEASE</version>
         </dependency>
 
-        <!--<dependency>
-            <groupId>net.sf.ehcache</groupId>
-            <artifactId>ehcache-core</artifactId>
-            <version>2.6.11</version>
-        </dependency>-->
-
         <dependency>
             <groupId>net.sf.ehcache</groupId>
             <artifactId>ehcache</artifactId>
             <version>2.10.0</version>
         </dependency>
-
 
         <dependency>
             <groupId>org.springframework.session</groupId>
@@ -281,6 +274,11 @@
                 <configuration>
                     <imageName>${docker.image.prefix}/${project.artifactId}</imageName>
                     <dockerDirectory>${project.basedir}/src/main/docker</dockerDirectory>
+                    <imageTags>
+                        <imageTag>${project.version}</imageTag>
+                        <imageTag>latest</imageTag>
+                    </imageTags>
+                    <useConfigFile>false</useConfigFile>
                     <resources>
                         <resource>
                             <targetPath>/</targetPath>

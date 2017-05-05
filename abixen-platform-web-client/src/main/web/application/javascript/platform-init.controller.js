@@ -57,7 +57,7 @@
         $log.log('PlatformInitController');
 
         var applicationLoginUrl = '/login';
-        var applicationAdminUrl = '/admin';
+        var applicationAdminUrl = '/control-panel';
 
         $scope.logout = function () {
             $http.get('/user', {
@@ -78,11 +78,11 @@
             id: 1,
             styleClass: 'btn add-new-page-button',
             faIcon: 'fa fa-plus',
-            title: 'Add Page',
+            title: 'application.button.addPage',
             onClick: function () {
                 $aside.open({
                     placement: 'left',
-                    templateUrl: '/application/modules/page/html/add.html',
+                    templateUrl: 'application/modules/page/html/edit.html',
                     size: 'md',
                     backdrop: false,
                     controller: 'PageDetailsController as pageDetails'
@@ -96,9 +96,9 @@
             id: 2,
             styleClass: 'btn edit-mode-button',
             faIcon: 'fa fa-pencil-square-o',
-            title: 'Edit Mode',
+            title: 'application.button.editMode',
             onClick: function () {
-                $scope.$broadcast(platformParameters.events.ADF_TOGGLE_EDIT_MODE_EVENT);
+                $scope.$broadcast(platformParameters.events.DASHBOARD_TOGGLE_EDIT_MODE_EVENT);
                 editPageButton.visible = !editPageButton.visible;
                 $scope.showDropdown = !$scope.showDropdown;
             },
@@ -112,16 +112,16 @@
 
         var editPageButton = {
             id: 1,
-            title: 'Edit page',
+            title: 'application.button.action.editPage',
             onClick: function () {
-                $scope.$broadcast(platformParameters.events.ADF_EDIT_DASHBOARD_EVENT);
+                $scope.$broadcast(platformParameters.events.DASHBOARD_EDIT_DASHBOARD_EVENT);
             },
             isSeparator: false
         };
 
         var deletePageButton = {
             id: 2,
-            title: 'Delete Page',
+            title: 'application.button.action.deletePage',
             onClick: function () {
                 var deletePage = function () {
                     Page.delete({id: $state.params.id}, function (data) {
@@ -155,9 +155,9 @@
 
         var newModuleButton = {
             id: 4,
-            title: 'Add Module',
+            title: 'application.button.action.addModule',
             onClick: function () {
-                $scope.$broadcast(platformParameters.events.ADF_ADD_WIDGET_EVENT);
+                $scope.$broadcast(platformParameters.events.DASHBOARD_ADD_MODULE_EVENT);
             },
             isSeparator: false
         };
@@ -229,7 +229,7 @@
 
         $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
             $scope.editMode = false;
-            editModeButton.title = 'Edit Mode';
+            editModeButton.title = 'application.button.editMode';
             if (toState.name == 'application.welcome') {
                 editModeButton.visible = false;
             } else if (toState.name == 'application.page') {
@@ -251,17 +251,17 @@
         $scope.editUser = function () {
             $aside.open({
                 placement: 'left',
-                templateUrl: '/application/modules/user/html/edit.html',
+                templateUrl: 'application/modules/user/html/edit.html',
                 size: 'md',
                 backdrop: false,
                 controller: 'UserAccountDetailsController as userAccountDetails'
             });
         };
 
-        $scope.$on(platformParameters.events.ADF_TOGGLE_EDIT_MODE_RESPONSE_EVENT, function (event, editMode) {
+        $scope.$on(platformParameters.events.DASHBOARD_TOGGLE_EDIT_MODE_RESPONSE_EVENT, function (event, editMode) {
             $log.log('toggle edit mode invoked, editMode: ', editMode);
             $scope.editMode = editMode;
-            editModeButton.title = $scope.editMode ? 'View Mode' : 'Edit Mode';
+            editModeButton.title = $scope.editMode ? 'application.button.viewMode' : 'application.button.editMode';
         });
     }
 })();

@@ -14,6 +14,8 @@
 
 package com.abixen.platform.service.businessintelligence.multivisualisation.service.impl;
 
+import com.abixen.platform.service.businessintelligence.multivisualisation.converter.DatabaseConnectionToDatabaseConnectionDtoConverter;
+import com.abixen.platform.service.businessintelligence.multivisualisation.dto.DatabaseConnectionDto;
 import com.abixen.platform.service.businessintelligence.multivisualisation.form.DatabaseConnectionForm;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.impl.database.DatabaseConnection;
 import com.abixen.platform.service.businessintelligence.multivisualisation.model.web.DataSourceColumnWeb;
@@ -27,7 +29,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.sql.Connection;
 import java.util.List;
 
@@ -36,14 +37,16 @@ import java.util.List;
 @Service
 public class DatabaseConnectionServiceImpl implements DatabaseConnectionService {
 
-    @Resource
     private DatabaseConnectionRepository dataSourceConnectionRepository;
+    private DatabaseFactory databaseFactory;
+    private DatabaseConnectionToDatabaseConnectionDtoConverter databaseConnectionToDatabaseConnectionDtoConverter;
 
     @Autowired
-    private DatabaseFactory databaseFactory;
-
-    //@Autowired
-    //KpiChartConfigurationDomainBuilderService kpiChartConfigurationDomainBuilderService;
+    public DatabaseConnectionServiceImpl(DatabaseConnectionRepository dataSourceConnectionRepository, DatabaseFactory databaseFactory, DatabaseConnectionToDatabaseConnectionDtoConverter databaseConnectionToDatabaseConnectionDtoConverter) {
+        this.dataSourceConnectionRepository = dataSourceConnectionRepository;
+        this.databaseFactory = databaseFactory;
+        this.databaseConnectionToDatabaseConnectionDtoConverter = databaseConnectionToDatabaseConnectionDtoConverter;
+    }
 
     @Override
     public Page<DatabaseConnection> findAllDatabaseConnections(Pageable pageable) {
@@ -51,8 +54,23 @@ public class DatabaseConnectionServiceImpl implements DatabaseConnectionService 
     }
 
     @Override
+    public Page<DatabaseConnectionDto> findAllDatabaseConnectionsAsDto(Pageable pageable) {
+        return databaseConnectionToDatabaseConnectionDtoConverter.convertToPage(findAllDatabaseConnections(pageable));
+    }
+
+    @Override
     public DatabaseConnection findDatabaseConnection(Long id) {
-        return dataSourceConnectionRepository.getOne(id);
+       return dataSourceConnectionRepository.getOne(id);
+    }
+
+    @Override
+    public DatabaseConnectionDto findDatabaseConnectionAsDto(Long id) {
+        return databaseConnectionToDatabaseConnectionDtoConverter.convert(findDatabaseConnection(id));
+    }
+
+    @Override
+    public void deleteDatabaseConnection(Long id) {
+        dataSourceConnectionRepository.delete(id);
     }
 
     @Override
@@ -127,6 +145,5 @@ public class DatabaseConnectionServiceImpl implements DatabaseConnectionService 
         Connection connection = databaseService.getConnection(databaseConnection);
         return databaseService.getColumns(connection, table);
     }
-
 
 }

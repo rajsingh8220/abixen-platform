@@ -25,11 +25,11 @@
         '$log',
         'ApplicationDatabaseDataSource',
         'ChartModuleConfiguration',
-        'CharDataPreview',
+        'CharData',
         'multivisualisationWizardStep'
     ];
 
-    function ChartModuleConfigurationWizardController($scope, $log, ApplicationDatabaseDataSource, ChartModuleConfiguration, CharDataPreview, multivisualisationWizardStep) {
+    function ChartModuleConfigurationWizardController($scope, $log, ApplicationDatabaseDataSource, ChartModuleConfiguration, CharData, multivisualisationWizardStep) {
         $log.log('ChartModuleConfigurationWizardController');
 
         var configWizard = this;
@@ -37,12 +37,14 @@
 
         configWizard.stepCurrent = 0;
         configWizard.stepMax = 3;
+        configWizard.validators = getValidators();
 
         //TODO - check if needed
         $scope.chartConfiguration = configWizard.chartConfiguration = {
             id: null,
             moduleId: null
         };
+
 
         configWizard.chartTypes = multivisualisationWizardStep.getChartTypes();
         configWizard.dataSources = null;
@@ -82,6 +84,7 @@
         configWizard.removeDataSetSeries = removeDataSetSeries;
         configWizard.setDataSetSeriesSelected = setDataSetSeriesSelected;
         configWizard.reloadPreviewData = reloadPreviewData;
+        configWizard.resetFilters = resetFilters;
         configWizard.isChart = $scope.isChart = chartTypeWizardStepIsChart;
         configWizard.setColumnSelected = setColumnSelected;
 
@@ -91,7 +94,7 @@
 
 
         function chartTypeWizardStepValidate() {
-            return configWizard.chartConfiguration.chartType !== null;
+            return configWizard.chartConfiguration.chartType !== null && configWizard.chartConfiguration.chartType !== undefined;
         }
 
         function chartTypeWizardStepIsChart() {
@@ -134,8 +137,6 @@
         function buildJsonFromObj(domainSeries) {
             if (domainSeries.filterObj === null || domainSeries.filterObj === undefined) {
                 domainSeries.filterObj = {};
-                domainSeries.filterObj.conditionOne = [];
-                domainSeries.filterObj.conditionTwo = [];
             }
             var filter = {
                 group: {
@@ -147,17 +148,24 @@
                 filter.group.rules.push({
                     condition: domainSeries.filterObj.conditionOne.operator,
                     field: domainSeries.dataSourceColumn.name,
-                    data: domainSeries.filterObj.conditionOne.value
+                    data: getValueAsText(domainSeries.filterObj.conditionOne.value)
                 })
             }
             if (domainSeries.filterObj.conditionTwo && domainSeries.filterObj.conditionTwo.value !== null){
                 filter.group.rules.push({
                     condition: domainSeries.filterObj.conditionTwo.operator,
                     field: domainSeries.dataSourceColumn.name,
-                    data: domainSeries.filterObj.conditionTwo.value
+                    data: getValueAsText(domainSeries.filterObj.conditionTwo.value)
                 })
             }
             return filter;
+        }
+
+        function getValueAsText(value) {
+            if (isDate(value)){
+                return new Date(new Date(value) - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0,10);
+            }
+            return value;
         }
 
         function buildObjFromJson(domainSeries, json) {
@@ -180,14 +188,21 @@
             return JSON.stringify(jsonObj);
         }
 
+        function getIndexInTableForColumnIdx(columns, idx) {
+            return columns.findIndex(function (element) {
+                return element.idx == idx;
+            })
+        }
+
         function setColumnSelected(idx) {
             $log.log('moduleConfigurationWizardStep setSelected ', idx);
-
-            configWizard.table.columnSelected = configWizard.table.columns[idx - 1];
-            configWizard.table.columns[idx - 1].isActive = !configWizard.table.columns[idx - 1].isActive;
-            if (configWizard.table.columns[idx - 1].isActive === true) {
-                getColumnData(idx - 1);
+            idx = getIndexInTableForColumnIdx(configWizard.table.columns, idx);
+            configWizard.table.columnSelected = configWizard.table.columns[idx];
+            configWizard.table.columns[idx].isActive = !configWizard.table.columns[idx].isActive;
+            if (configWizard.table.columns[idx].isActive === true) {
+                getColumnData(idx);
             } else {
+                configWizard.table.columnPreviewData = [];
                 buildTableConfiguration();
             }
         }
@@ -206,10 +221,10 @@
 
             configWizard.chartConfiguration.dataSource.columns.sort(compare).forEach(function (column) {
                 var isActive = false;
-                if (configWizard.chartConfiguration.dataSetChart.domainXSeriesColumn.dataSourceColumn !== null) {
+                if (configWizard.chartConfiguration.dataSetChart && configWizard.chartConfiguration.dataSetChart.domainXSeriesColumn.dataSourceColumn !== null) {
                     isActive = configWizard.chartConfiguration.dataSetChart.domainXSeriesColumn.dataSourceColumn.name === column.name;
                 }
-                if (isActive === false && configWizard.chartConfiguration.dataSetChart.dataSetSeries !== null) {
+                if (isActive === false && configWizard.chartConfiguration.dataSetChart && configWizard.chartConfiguration.dataSetChart.dataSetSeries !== null) {
                     configWizard.chartConfiguration.dataSetChart.dataSetSeries.forEach(function (series) {
                         if (isActive === false && series.valueSeriesColumn.name === column.name) {
                             isActive = true;
@@ -229,6 +244,7 @@
 
         function moduleConfigurationWizardStepSelected() {
             $log.log('moduleConfigurationWizardStep selected');
+            configWizard.chartConfiguration.moduleId = $scope.moduleId;
             if (configWizard.stepCurrent === 2 && !chartTypeWizardStepIsChart()) {
                 refreshColumn();
             }
@@ -237,13 +253,13 @@
         function getColumnData(idx) {
             configWizard.table.columnPreviewData = [];
             if (configWizard.table.columnSelected.name != undefined && configWizard.table.columnSelected.name !== '') {
-                CharDataPreview.query({seriesName: configWizard.table.columnSelected.name}, buildTableConfiguration())
+                CharData.query({seriesName: configWizard.table.columnSelected.name}, buildTableConfiguration())
                     .$promise
                     .then(onQueryResult)
             }
 
             function onQueryResult(data) {
-                $log.log('CharDataPreview.query: ', data);
+                $log.log('CharData.query: ', data);
                 data.forEach(function (el) {
                     configWizard.table.columnPreviewData.push({
                         value: el[configWizard.table.columnSelected.name].value
@@ -257,14 +273,14 @@
             if (configWizard.dataSetSeriesSelected) {
                 if (configWizard.dataSetSeriesSelected.valueSeriesColumn.dataSourceColumn !== null && configWizard.dataSetSeriesSelected.valueSeriesColumn.dataSourceColumn.name !== undefined && configWizard.dataSetSeriesSelected.valueSeriesColumn.dataSourceColumn.name !== '') {
                     configWizard.chartConfiguration = prepareFilterForDomain(configWizard.chartConfiguration);
-                    CharDataPreview.query({seriesName: configWizard.dataSetSeriesSelected.name}, configWizard.chartConfiguration)
+                    CharData.query({seriesName: configWizard.dataSetSeriesSelected.name}, configWizard.chartConfiguration)
                         .$promise
                         .then(onQueryResult);
                 }
             }
 
             function onQueryResult(data) {
-                $log.log('CharDataPreview.query: ', data);
+                $log.log('CharData.query: ', data);
                 data.forEach(function (el) {
                     configWizard.chart.seriesPreviewData.push({
                         x: el[configWizard.chartConfiguration.dataSetChart.domainXSeriesColumn.dataSourceColumn.name].value,
@@ -307,7 +323,25 @@
         }
 
         function dataSourceWizardStepValidate() {
-            return configWizard.chartConfiguration.dataSource !== null;
+            return configWizard.chartConfiguration.dataSource !== null && configWizard.chartConfiguration.dataSource !== undefined;
+        }
+
+        function dataConfigurationWizardStepValidate() {
+            if (configWizard.entityForm) {
+                if (configWizard.chartConfiguration.chartType === 'TABLE'){
+                    var isActive = false;
+                    configWizard.table.columns.forEach(function (column) {
+                        if (column.isActive === true) {
+                            isActive = true;
+                        }
+                    });
+                    return isActive;
+                }
+                else {
+                    return configWizard.entityForm.$valid;
+                }
+            }
+            return false;
         }
 
         function buildTableConfiguration() {
@@ -353,6 +387,7 @@
                     }
                 }
             });
+            $scope.tableConfiguration = tableConfiguration;
             return tableConfiguration
         }
 
@@ -405,12 +440,23 @@
                         }
                     }
                 } else {
-                    buildObjFromJson(configWizard.chartConfiguration.dataSetChart.domainXSeriesColumn, configWizard.chartConfiguration.filter);
+                    if (configWizard.chartConfiguration.dataSetChart) {
+                        buildObjFromJson(configWizard.chartConfiguration.dataSetChart.domainXSeriesColumn, configWizard.chartConfiguration.filter);
+                        if (configWizard.chartConfiguration.dataSetChart.dataSetSeries.length > 0){
+                            setDataSetSeriesSelected(configWizard.chartConfiguration.dataSetChart.dataSetSeries[0]);
+                        }
+                    }
                 }
             }
-        }
+    }
 
         function initDataSetSeries() {
+            if (!configWizard.chartConfiguration.dataSetChart){
+                configWizard.chartConfiguration.dataSetChart = {};
+            }
+            if (!configWizard.chartConfiguration.dataSetChart.dataSetSeries){
+                configWizard.chartConfiguration.dataSetChart.dataSetSeries = [];
+            }
             if (configWizard.chartConfiguration.dataSetChart.dataSetSeries.length === 0) {
                 addDataSetSeries();
             } else {
@@ -497,6 +543,9 @@
                 validate = dataSourceWizardStepValidate();
                 return validate;
             }
+            if (configWizard.stepCurrent === 2) {
+                validate = dataConfigurationWizardStepValidate();
+            }
             return validate
         }
 
@@ -516,6 +565,65 @@
 
         function reloadPreviewData() {
             getSeriesData();
+        }
+
+        function resetFilters() {
+            var domainSeries = configWizard.chartConfiguration.dataSetChart.domainXSeriesColumn;
+            if (!domainSeries.filterObj) {
+                domainSeries.filterObj = {};
+            }
+            if (!domainSeries.filterObj.conditionOne) {
+                domainSeries.filterObj.conditionOne = {};
+            }
+            if (!domainSeries.filterObj.conditionTwo) {
+                domainSeries.filterObj.conditionTwo = {};
+            }
+            domainSeries.filterObj.conditionOne.operator = null;
+            domainSeries.filterObj.conditionOne.value = null;
+            domainSeries.filterObj.conditionTwo = {};
+            domainSeries.filterObj.conditionTwo.operator = null;
+            domainSeries.filterObj.conditionTwo.value = null;
+        }
+
+        function isDate(date) {
+            return (new Date(date) !== "Invalid Date") && !isNaN(new Date(date));
+        }
+
+        function getValidators() {
+            var validators = [];
+
+            validators['axisXName'] =
+                [
+                    new NotNull(),
+                    new Length(1, 32)
+                ];
+
+            validators['axisYName'] =
+                [
+                    new NotNull(),
+                    new Length(1, 32)
+                ];
+
+            validators['singleSelect'] =
+                [
+                    new NotNull(),
+                    new Length(1, 32)
+                ];
+
+            validators['seriesSelectedName'] =
+                [
+                    new NotNull(),
+                    new Length(1, 32)
+                ];
+            validators['inputDataInteger'] =
+                [
+                    new Size(-2147483648, 2147483648)
+                ];
+            validators['inputDataDouble'] =
+                [
+                    new Size(-2147483648, 2147483648)
+                ];
+            return validators;
         }
 
     }

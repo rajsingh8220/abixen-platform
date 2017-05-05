@@ -28,9 +28,7 @@ public class PlatformModuleSecurityConfiguration extends WebSecurityConfigurerAd
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .antMatchers("/configuration").permitAll()
-                .antMatchers("/service/abixen/business-intelligence/application/**").permitAll()
-                .antMatchers("/service/abixen/business-intelligence/admin/**").permitAll()
+                .antMatchers("/api/configuration").permitAll()
                 .antMatchers("/hystrix.stream").permitAll()
                 .anyRequest().authenticated()
                 .and()

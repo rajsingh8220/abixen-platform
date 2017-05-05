@@ -27,22 +27,31 @@
         '$stateParams',
         'PageModel',
         'PageModelParser',
-        'toaster'
+        'toaster',
+        'applicationNavigationItems'
     ];
 
-    function PageController($scope, $log, $state, $stateParams, PageModel, PageModelParser, toaster) {
+    function PageController($scope,
+                            $log,
+                            $state,
+                            $stateParams,
+                            PageModel,
+                            PageModelParser,
+                            toaster,
+                            applicationNavigationItems) {
         $log.log('PageController');
 
         var model = $scope.model;
 
         if (!model) {
             // set default model to avoid js console errors, initializing with empty layout
+            //TODO - do we need it?
             model = {
-                title: "Sample dashboard",
-                structure: "1 (100)",
+                title: 'Sample dashboard',
+                structure: '1 (100)',
                 rows: [{
                     columns: [{
-                        styleClass: "col-md-12",
+                        styleClass: 'col-md-12',
                         modules: []
                     }]
                 }]
@@ -71,7 +80,7 @@
             }
         }
 
-        $scope.$on(platformParameters.events.ADF_DASHBOARD_CHANGED_EVENT, function (event, name, model) {
+        $scope.$on(platformParameters.events.DASHBOARD_DASHBOARD_CHANGED_EVENT, function (event, name, model) {
             var pageModelDto = PageModelParser.createPageModelDto($scope.pageModelDto.page, model);
             configurePage(pageModelDto);
         });
@@ -81,7 +90,7 @@
             savePage(pageModelDto);
         });
 
-        $scope.$on(platformParameters.events.ADF_STRUCTURE_CHANGED_EVENT, function (event, structure) {
+        $scope.$on(platformParameters.events.DASHBOARD_LAYOUT_CHANGED_EVENT, function (event, structure) {
             $scope.pageModelDto.page.layout = structure;
         });
 
@@ -103,6 +112,7 @@
                 $log.log('page updated');
                 $scope.pageModelDto = {page: data.form.page, dashboardModuleDtos: data.form.dashboardModuleDtos};
                 $scope.model = PageModelParser.updateModelModulesNullIds($scope.model, data.form.dashboardModuleDtos);
+                applicationNavigationItems.editSidebarItem($scope.pageModelDto.page.id, $scope.pageModelDto.page.title, $scope.pageModelDto.page.icon);
                 toaster.pop(platformParameters.statusAlertTypes.SUCCESS, 'Updated', 'The page has been updated successfully.');
             })
         };

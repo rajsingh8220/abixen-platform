@@ -1,0 +1,32 @@
+<div class="row form-row">
+    <div class="col-md-12">
+        <form role="form" name="entityForm" novalidate>
+            <div class="form-group">
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th>Role name</th>
+                        <th ng-repeat="permission in permissions.aclRolesPermissionsDto.permissions">{{permission.title}}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr ng-repeat="aclRolePermissionsDto in permissions.aclRolesPermissionsDto.aclRolePermissionsDtos">
+                        <td>{{aclRolePermissionsDto.role!= null ? aclRolePermissionsDto.role.name : 'Owner'}}</td>
+                        <td ng-repeat="aclPermissionDto in aclRolePermissionsDto.aclPermissionDtos"><input
+                                type="checkbox" ng-model="aclPermissionDto.selected"
+                                ng-disabled="!aclPermissionDto.selectable"/></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="row bottom-navigation">
+    <div class="col-xs-12">
+        <button class="btn save-button" ng-click="permissions.saveForm()"><i class="fa fa-floppy-o"></i><span>Save</span>
+        </button>
+        <button class="btn cancel-button" ng-click="permissions.goBack()"><i class="fa fa-times"></i><span>Cancel</span>
+        </button>
+    </div>
+</div>

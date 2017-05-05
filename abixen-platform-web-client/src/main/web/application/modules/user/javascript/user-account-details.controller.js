@@ -24,7 +24,7 @@
         $log.log('UserAccountDetailsController');
 
         var userId = platformSecurity.getPlatformUser().id;
-        var userBaseUrl = "/api/application/users/";
+        var userBaseUrl = '/api/application/users/';
         var userAccountDetails = this;
 
         userAccountDetails.userDetails = {};
@@ -65,7 +65,6 @@
 
 
         function saveForm(){
-            console.log('saveForm: ' + userAccountDetails.selectedTab);
             switch (userAccountDetails.selectedTab){
                 case 'userDetails':
                     userAccountDetails.userDetails.saveForm();
@@ -74,7 +73,7 @@
                     userAccountDetails.changePassword.saveForm();
                     break;
                 default:
-                    throw new Error('Unsupported a saveForm() operation.')
+                    throw new Error('Unsupported a saveForm() operation.');
             }
         }
 
@@ -87,7 +86,6 @@
         }
 
         function selectChangePassword() {
-            console.log('selectChangePassword');
             userAccountDetails.selectedTab = 'changePassword';
         }
 
@@ -98,11 +96,11 @@
         function creteUploder() {
             var uploader = new FileUploader({
                 url: userBaseUrl + userId + '/avatar',
-                method: "POST",
+                method: 'POST',
                 alias: 'avatarFile',
                 queueLimit: 1,
                 headers: {
-                    "X-XSRF-TOKEN": $cookies.get($http.defaults.xsrfCookieName)
+                    'X-XSRF-TOKEN': $cookies.get($http.defaults.xsrfCookieName)
                 }
             });
 

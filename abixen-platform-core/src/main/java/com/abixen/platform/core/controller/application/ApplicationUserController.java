@@ -16,11 +16,14 @@ package com.abixen.platform.core.controller.application;
 
 import com.abixen.platform.core.configuration.properties.AbstractPlatformResourceConfigurationProperties;
 import com.abixen.platform.core.controller.common.AbstractUserController;
+import com.abixen.platform.core.converter.RoleToRoleDtoConverter;
+import com.abixen.platform.core.converter.UserToUserDtoConverter;
 import com.abixen.platform.core.service.MailService;
 import com.abixen.platform.core.service.RoleService;
 import com.abixen.platform.core.service.SecurityService;
 import com.abixen.platform.core.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -34,7 +37,17 @@ public class ApplicationUserController extends AbstractUserController {
                                      MailService mailService,
                                      RoleService roleService,
                                      SecurityService securityService,
-                                     AbstractPlatformResourceConfigurationProperties platformResourceConfigurationProperties) {
-        super(userService, mailService, roleService, securityService, platformResourceConfigurationProperties);
+                                     AbstractPlatformResourceConfigurationProperties platformResourceConfigurationProperties,
+                                     MessageSource messageSource,
+                                     UserToUserDtoConverter userToUserDtoConverter,
+                                     RoleToRoleDtoConverter roleToRoleDtoConverter) {
+        super(userService,
+                mailService,
+                roleService,
+                securityService,
+                platformResourceConfigurationProperties,
+                messageSource,
+                userToUserDtoConverter,
+                roleToRoleDtoConverter);
     }
 }

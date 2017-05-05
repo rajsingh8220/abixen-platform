@@ -14,20 +14,27 @@
 
 package com.abixen.platform.service.webcontent.service.impl;
 
-import com.abixen.platform.core.exception.PlatformServiceRuntimeException;
+import com.abixen.platform.common.exception.PlatformServiceRuntimeException;
 import com.abixen.platform.service.webcontent.form.StructureForm;
 import com.abixen.platform.service.webcontent.model.impl.Structure;
 import com.abixen.platform.service.webcontent.model.impl.Template;
 import com.abixen.platform.service.webcontent.repository.StructureRepository;
 import com.abixen.platform.service.webcontent.service.StructureService;
 import com.abixen.platform.service.webcontent.service.TemplateService;
+import com.abixen.platform.service.webcontent.util.ParserUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.xml.sax.SAXException;
 
 import javax.annotation.Resource;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Transactional
@@ -46,6 +53,7 @@ public class StructureServiceImpl implements StructureService {
         structure.setName(structureForm.getName());
         structure.setContent(structureForm.getContent());
         Template template = templateService.findTemplateById(structureForm.getTemplate().getId());
+        validateStructureTemplate(structure, template);
         structure.setTemplate(template);
         return structureRepository.save(structure);
     }
@@ -57,8 +65,34 @@ public class StructureServiceImpl implements StructureService {
         structure.setName(structureForm.getName());
         structure.setContent(structureForm.getContent());
         Template template = templateService.findTemplateById(structureForm.getTemplate().getId());
+        validateStructureTemplate(structure, template);
         structure.setTemplate(template);
         return structureRepository.save(structure);
+    }
+
+    private void validateStructureTemplate(Structure structure, Template template) {
+        String templateContents = template.getContent();
+        String structureContents = structure.getContent();
+        Set<String> templateKeys = ParserUtil.evaluateEL(templateContents);
+        Set<String> attributeValues = null;
+        try {
+            attributeValues = ParserUtil.parseAttributes(structureContents);
+        } catch (ParserConfigurationException | IOException | SAXException e) {
+            throw new PlatformServiceRuntimeException(String.format("Structure Content parsing error with content: ", structureContents + "Error details : " + e.getMessage()));
+        }
+        StringBuilder templateKeysNotFoundError = new StringBuilder();
+        if (templateKeys != null) {
+            for (String templateKey : templateKeys) {
+                if (StringUtils.isNotBlank(templateKey)) {
+                    if (!attributeValues.contains(templateKey)) {
+                        templateKeysNotFoundError.append("[" + templateKey + "]");
+                    }
+                }
+            }
+        }
+        if (StringUtils.isNotBlank(templateKeysNotFoundError.toString())) {
+            throw new PlatformServiceRuntimeException(String.format("Structure Content is missing following Template Contents: " + templateKeysNotFoundError));
+        }
     }
 
     @Override
@@ -81,5 +115,10 @@ public class StructureServiceImpl implements StructureService {
     public Page<Structure> findAllStructures(Pageable pageable) {
         log.debug("findAllStructures() - pageable: {}", pageable);
         return structureRepository.findAll(pageable);
+    }
+
+    @Override
+    public List<Structure> findAllStructures() {
+        return structureRepository.findAll();
     }
 }

@@ -14,8 +14,8 @@
 
 package com.abixen.platform.service.businessintelligence.configuration;
 
-import com.abixen.platform.core.configuration.AbstractJapConfiguration;
-import com.abixen.platform.core.configuration.properties.AbstractPlatformJdbcConfigurationProperties;
+import com.abixen.platform.common.configuration.AbstractJpaConfiguration;
+import com.abixen.platform.common.configuration.properties.AbstractPlatformJdbcConfigurationProperties;
 import com.abixen.platform.service.businessintelligence.security.PlatformAuditorAware;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -32,12 +32,12 @@ import javax.sql.DataSource;
 @Import(PlatformModuleDataSourceConfiguration.class)
 @EnableTransactionManagement
 @EnableJpaAuditing(auditorAwareRef = "platformAuditorAware")
-@EnableJpaRepositories(basePackages = {PlatformModulesPackages.CHART_REPOSITORY, PlatformModulesPackages.MAGIC_NUMBER_REPOSITORY, PlatformModulesPackages.KPI_CHART_REPOSITORY})
-public class PlatformModuleJpaConfiguration extends AbstractJapConfiguration {
+@EnableJpaRepositories(basePackages = {PlatformModulesPackages.CHART_REPOSITORY})
+public class PlatformModuleJpaConfiguration extends AbstractJpaConfiguration {
 
     @Autowired
     public PlatformModuleJpaConfiguration(DataSource dataSource, AbstractPlatformJdbcConfigurationProperties platformJdbcConfiguration) {
-        super(dataSource, platformJdbcConfiguration, new String[]{PlatformModulesPackages.CHART_DOMAIN, PlatformModulesPackages.MAGIC_NUMBER_DOMAIN, PlatformModulesPackages.KPI_CHART_DOMAIN});
+        super(dataSource, platformJdbcConfiguration, new String[]{PlatformModulesPackages.CHART_DOMAIN});
     }
 
     public AuditorAware platformAuditorAware() {

@@ -17,27 +17,43 @@ zuul:
 
     # Begin of custom module microservices - add mapping relevant to your microservice
 
-    # Begin of businessintelligence microservice
-    businessintelligenceApplication:
+    # Begin of Business Intelligence microservice
+    businessIntelligenceApplication:
       path: /service/abixen/business-intelligence/application/**
-      serviceId: http://${abixen.services.gateway.uri:localhost}:9090/service/abixen/business-intelligence/application
+      url: http://${abixen.services.gateway.uri:localhost}:9090/service/abixen/business-intelligence/application
       sensitive-headers:
-    businessintelligenceAdmin:
-      path: /service/abixen/business-intelligence/admin/**
-      url: http://${abixen.services.gateway.uri:localhost}:9090/service/abixen/business-intelligence/admin/
+    businessIntelligenceApplicationApi:
+      path: /api/service/abixen/business-intelligence/application/**
+      url: http://${abixen.services.gateway.uri:localhost}:9090/api/service/abixen/business-intelligence/application
       sensitive-headers:
-    # End of businessintelligence microservice
+    businessIntelligenceAdmin:
+      path: /service/abixen/business-intelligence/control-panel/**
+      url: http://${abixen.services.gateway.uri:localhost}:9090/service/abixen/business-intelligence/control-panel/
+      sensitive-headers:
+    businessIntelligenceAdminApi:
+      path: /api/service/abixen/business-intelligence/control-panel/**
+      url: http://${abixen.services.gateway.uri:localhost}:9090/api/service/abixen/business-intelligence/control-panel/
+      sensitive-headers:
+    # End of Business Intelligence microservice
 
-    # Begin of web-content microservice
+    # Begin of Web Content microservice
     webContentApplication:
       path: /service/abixen/web-content/application/**
       url: http://${abixen.services.gateway.uri:localhost}:9092/service/abixen/web-content/application/
       sensitive-headers:
-    webContentAdmin:
-      path: /service/abixen/web-content/admin/**
-      url: http://${abixen.services.gateway.uri:localhost}:9092/service/abixen/web-content/admin/
+    webContentApplicationApi:
+      path: /api/service/abixen/web-content/application/**
+      url: http://${abixen.services.gateway.uri:localhost}:9092/api/service/abixen/web-content/application/
       sensitive-headers:
-    # End of web-content microservice
+    webContentAdmin:
+      path: /service/abixen/web-content/control-panel/**
+      url: http://${abixen.services.gateway.uri:localhost}:9092/service/abixen/web-content/control-panel/
+      sensitive-headers:
+    webContentAdminApi:
+      path: /api/service/abixen/web-content/control-panel/**
+      url: http://${abixen.services.gateway.uri:localhost}:9092/api/service/abixen/web-content/control-panel/
+      sensitive-headers:
+    # End of Web Content microservice
 
     # End of custom module microservices
 
@@ -54,7 +70,7 @@ hystrix:
 
 
 spring:
-  profiles: cloud
+  profiles: docker
   zipkin:
     baseUrl: http://zipkin:9411
 
